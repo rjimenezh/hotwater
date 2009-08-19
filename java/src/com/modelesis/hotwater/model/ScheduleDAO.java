@@ -12,7 +12,19 @@ package com.modelesis.hotwater.model;
  */
 public class ScheduleDAO {
 	
-	public byte[] serializeSchedule(Schedule sched) {
+	/**
+	 * Serializes the schedule.  Serialization
+	 * turns the schedule into a byte array,
+	 * with one byte for each hour in a week (168 total);
+	 * within each byte, the six least significant bits
+	 * are used to represent the state of the hour's six
+	 * 10-digit segments.  The least significant bit is
+	 * the :00 to :09 segment, the next bit is :10 to :19, etc.
+	 * 
+	 * @param sched Schedule object to serialize
+	 * @return Serialized version of schedule object
+	 */
+	public byte[] serializeScheduleToHardware(Schedule sched) {
 		byte[] serSched = new byte[24 * 7];  // Hours per week
 		byte currentHour = 0;
 

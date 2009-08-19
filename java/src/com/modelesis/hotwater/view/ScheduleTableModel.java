@@ -8,6 +8,7 @@ import java.util.Calendar;
 
 import javax.swing.table.AbstractTableModel;
 
+import com.modelesis.hotwater.model.ScheduleChangeListener;
 import com.modelesis.hotwater.model.ScheduleManager;
 
 /**
@@ -18,7 +19,8 @@ import com.modelesis.hotwater.model.ScheduleManager;
  *
  */
 @SuppressWarnings("serial")
-public class ScheduleTableModel extends AbstractTableModel {
+public class ScheduleTableModel extends AbstractTableModel
+implements ScheduleChangeListener {
 	
 	/** Associated schedule manager. */
 	protected ScheduleManager scheduleManager;
@@ -33,6 +35,7 @@ public class ScheduleTableModel extends AbstractTableModel {
 	 */
 	public ScheduleTableModel(ScheduleManager mgr) {
 		scheduleManager = mgr;
+		mgr.setScheduleChangeListener(this);
 		hourFormat = new SimpleDateFormat("h:00aa");
 	}
 
@@ -113,4 +116,10 @@ public class ScheduleTableModel extends AbstractTableModel {
 	public boolean isCellEditable(int rowIndex, int columnIndex) {
 		return false;
 	}
+
+	@Override
+	public void scheduleChanged(int day, int segment) {
+		if(day == 0) day = 7;  // Sunday
+		fireTableCellUpdated(segment, day);
+	}	
 }

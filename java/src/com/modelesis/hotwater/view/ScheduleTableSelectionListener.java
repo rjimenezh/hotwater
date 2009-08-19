@@ -42,10 +42,17 @@ public class ScheduleTableSelectionListener implements ListSelectionListener {
 			return;
 		
 		for(int day : scheduleTable.getSelectedColumns())
-			for(int segment : scheduleTable.getSelectedRows())
+			for(int segment : scheduleTable.getSelectedRows()) {
+				// 'day' cannot be modified
+				// lest Sunday multiple selections don't work...
+				int weekDay = day;
 				if(day != 0) {	// Skip hour column selections
-					if(day == 7) day = 0; // Sunday
-					scheduleManager.toggle(day, segment);
+					if(day == 7) weekDay = 0; // Sunday
+					scheduleManager.toggle(weekDay, segment);
 				}
+			}
+		
+		// Allow immediate re-selection of same segment
+		scheduleTable.clearSelection();
 	}
 }

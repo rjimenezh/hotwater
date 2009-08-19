@@ -3,7 +3,6 @@
  */
 package com.modelesis.hotwater.model;
 
-import java.util.Calendar;
 
 /**
  * Defines an operational schedule
@@ -17,20 +16,29 @@ import java.util.Calendar;
  */
 public class Schedule {
 	
+	/** Number of days in a week. */
 	protected static final int WEEK_DAYS = 7;
 	
+	/** Number of 10-minute segments in a day. */
 	protected static final int SEGMENTS_PER_DAY = 144;
 	
+	/** Minimum weekday array index. */
 	public static final int MIN_WEEKDAY = 0;
 	
+	/** Maximum weekday array index. */
 	public static final int MAX_WEEKDAY = 6;
 	
+	/** Minimum segment array index. */
 	public static final int MIN_SEGMENT = 0;
 	
+	/** Maximum segment array index. */
 	public static final int MAX_SEGMENT = 143;
 	
 	/** Actual schedule - One bolean per weekday/segment coordinate. */
 	protected boolean[][] schedule;
+	
+	/** Schedule change listener. */
+	protected ScheduleChangeListener listener;
 	
 	/**
 	 * Creates a new Schedule object.
@@ -42,20 +50,12 @@ public class Schedule {
 	}
 	
 	/**
-	 * Returns the time representation
-	 * as an integer indicating the current
-	 * 10-minute segment within the week,
-	 * ranging from 0 (Sunday 0:00-0:09)
-	 * to 1,008 (Saturday 23:50-23:59)
+	 * Associate a schedule change listener to this schedule.
 	 * 
-	 * @return Current time
+	 * @param lst Listener to bind to this schedule
 	 */
-	public int getTime() {
-		Calendar cal = Calendar.getInstance();
-		int dayOfWeek = cal.get(Calendar.DAY_OF_WEEK);
-		int hourOfDay = cal.get(Calendar.HOUR_OF_DAY);
-		int minutes = cal.get(Calendar.MINUTE);		
-		return 144 * (dayOfWeek - 1) + 6 * hourOfDay + minutes / 10;
+	public void setScheduleChangeListener(ScheduleChangeListener lst) {
+		listener = lst;
 	}
 	
 	/**
@@ -68,6 +68,7 @@ public class Schedule {
 	public void toggle(int weekDay, int segment) {
 		validateInput(weekDay, segment);
 		schedule[weekDay][segment] = !schedule[weekDay][segment];
+		notifyListener(weekDay, segment);
 	}
 	
 	/**
@@ -88,8 +89,10 @@ public class Schedule {
 	 */
 	public void clear() {
 		for(int i = MIN_WEEKDAY; i <= MAX_WEEKDAY; i++)
-			for(int j = MIN_SEGMENT; j <= MAX_SEGMENT; j++)
+			for(int j = MIN_SEGMENT; j <= MAX_SEGMENT; j++) {
 				schedule[i][j] = false;
+				notifyListener(i, j);
+			}
 	}
 	
 	/**
@@ -103,8 +106,10 @@ public class Schedule {
 			throw new IllegalArgumentException();
 		for(int i = 1; i <= 5; i++)
 			if(i != weekDay) {
-				for(int j = MIN_SEGMENT; j <= MAX_SEGMENT; j++)
+				for(int j = MIN_SEGMENT; j <= MAX_SEGMENT; j++) {
 					schedule[i][j] = schedule[weekDay][j];
+					notifyListener(i, j);
+				}		
 			}
 	}
 	
@@ -118,8 +123,10 @@ public class Schedule {
 		if((weekDay != 0) && (weekDay != 6))
 			throw new IllegalArgumentException();
 		int i = 6 - weekDay;
-		for(int j = MIN_SEGMENT; j <= MAX_SEGMENT; j++)
+		for(int j = MIN_SEGMENT; j <= MAX_SEGMENT; j++) {
 			schedule[i][j] = schedule[weekDay][j];
+			notifyListener(i, j);
+		}
 	}
 	
 	/**
@@ -132,13 +139,15 @@ public class Schedule {
 		validateInput(weekDay, 0);
 		for(int i = MIN_WEEKDAY; i <= MAX_WEEKDAY; i++)
 			if(i != weekDay) {
-				for(int j = MIN_SEGMENT; j <= MAX_SEGMENT; j++)
+				for(int j = MIN_SEGMENT; j <= MAX_SEGMENT; j++) {
 					schedule[i][j] = schedule[weekDay][j];
+					notifyListener(i, j);
+				}
 			}
 	}
 	
 	/**
-	 * Validates input parameter
+	 * Validates input parameters.
 	 * 
 	 * @param weekDay Day of Week: Sunday = 0, Monday = 1, etc.
 	 * @param segment Segment: 0 = 0:00-0:09; 1 = 0:10-0:19, etc. (up to 143)
@@ -148,6 +157,11 @@ public class Schedule {
 			throw new IllegalArgumentException();
 		if((segment < MIN_SEGMENT) || (segment > MAX_SEGMENT))
 			throw new IllegalArgumentException();
+	}
+	
+	protected void notifyListener(int weekDay, int segment) {
+		if(listener != null)
+			listener.scheduleChanged(weekDay, segment);
 	}
 	
 	/**

@@ -4,6 +4,7 @@
 package com.modelesis.hotwater.model;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 
 /**
@@ -31,6 +32,16 @@ public class ScheduleManager {
 	}
 
 	/**
+	 * Binds the specified schedule change listener
+	 * with the managed schedule.
+	 * 
+	 * @param lst Schedule change listener to bind to schedule
+	 */
+	public void setScheduleChangeListener(ScheduleChangeListener lst) {
+		schedule.setScheduleChangeListener(lst);
+	}
+	
+	/**
 	 * Delegate method for {@link Schedule#get(int, int)}
 	 * 
 	 * @param weekDay Weekday: 0 - Sunday, 6 - Saturday
@@ -42,22 +53,31 @@ public class ScheduleManager {
 	}
 
 	/**
-	 * Delegate method for {@link Schedule#getTime()}
+	 * Returns the time representation
+	 * as an integer indicating the current
+	 * 10-minute segment within the week,
+	 * ranging from 0 (Sunday 0:00-0:09)
+	 * to 1,008 (Saturday 23:50-23:59)
 	 * 
-	 * @return Time as segment of the week
+	 * @return Current time
 	 */
 	public int getTime() {
-		return schedule.getTime();
+		Calendar cal = Calendar.getInstance();
+		int dayOfWeek = cal.get(Calendar.DAY_OF_WEEK);
+		int hourOfDay = cal.get(Calendar.HOUR_OF_DAY);
+		int minutes = cal.get(Calendar.MINUTE);		
+		return 144 * (dayOfWeek - 1) + 6 * hourOfDay + minutes / 10;
 	}
-
+	
 	/**
 	 * Delegate method for {@link Schedule#normalizeWeek(int)}
 	 * 
 	 * @param weekDay Day of week whose programming will be replicated
 	 */
 	public void normalizeWeek(int weekDay) {
-		mementos.add(schedule.getMemento());
+		ScheduleMemento memento = schedule.getMemento();
 		schedule.normalizeWeek(weekDay);
+		mementos.add(memento);
 	}
 
 	/**
@@ -66,8 +86,9 @@ public class ScheduleManager {
 	 * @param weekDay Day of week whose programming will be replicated
 	 */
 	public void normalizeWeekDays(int weekDay) {
-		mementos.add(schedule.getMemento());
+		ScheduleMemento memento = schedule.getMemento();
 		schedule.normalizeWeekDays(weekDay);
+		mementos.add(memento);
 	}
 
 	/**
@@ -76,8 +97,9 @@ public class ScheduleManager {
 	 * @param weekDay Day of week whose programming will be replicated
 	 */
 	public void normalizeWeekends(int weekDay) {
-		mementos.add(schedule.getMemento());
+		ScheduleMemento memento = schedule.getMemento();
 		schedule.normalizeWeekends(weekDay);
+		mementos.add(memento);
 	}
 
 	/**
@@ -87,8 +109,9 @@ public class ScheduleManager {
 	 * @param segment Segment: 0 - 00:00/00:09; 143 - 23:50/23:59
 	 */
 	public void toggle(int weekDay, int segment) {
-		mementos.add(schedule.getMemento());
+		ScheduleMemento memento = schedule.getMemento();
 		schedule.toggle(weekDay, segment);
+		mementos.add(memento);
 	}
 	
 	/**

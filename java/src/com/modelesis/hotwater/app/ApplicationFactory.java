@@ -21,12 +21,20 @@ import com.modelesis.hotwater.view.ScheduleTableSelectionListener;
  */
 public class ApplicationFactory {
 	
+	/** Schedule manager. */
 	protected ScheduleManager scheduleManager;
 	
+	/** High-level schedule controller. */
 	protected ScheduleController scheduleController;
 	
+	/** Application UI main window. */
 	protected MainWindow mainWindow;
 	
+	/**
+	 * Builds the application by
+	 * instantiating and connecting
+	 * objects among them.
+	 */
 	public void buildApp() {
 		try {
 			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
@@ -39,6 +47,12 @@ public class ApplicationFactory {
 		mainWindow = new MainWindow(scheduleController, scheduleTable);
 	}
 	
+	/**
+	 * Builds the application UI's schedule table,
+	 * which relies on some model objects.
+	 * 
+	 * @return Instantiated schedule table
+	 */
 	private JTable buildScheduleTable() {
 		JTable scheduleTable = new JTable();
 		ScheduleTableCellRenderer renderer = new ScheduleTableCellRenderer();
@@ -53,6 +67,9 @@ public class ApplicationFactory {
 		return scheduleTable; 
 	}
 	
+	/**
+	 * Starts the application from a user perspective.
+	 */
 	public void startApp() {
 		mainWindow.setVisible(true);
 	}

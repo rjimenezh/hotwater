@@ -24,7 +24,8 @@ public class ScheduleController {
 	 */
 	public ScheduleController(ScheduleManager mgr) {
 		scheduleManager = mgr;
-	}	
+		mgr.loadSchedule();
+	}
 	
 	/**
 	 * Binds a schedule change listener to the underlying manager.

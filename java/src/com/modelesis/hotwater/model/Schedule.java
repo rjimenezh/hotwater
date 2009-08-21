@@ -182,7 +182,9 @@ public class Schedule {
 	 */
 	protected void restoreStatus(ScheduleMemento memento) {
 		for(int i = MIN_WEEKDAY; i <= MAX_WEEKDAY; i++)
-			for(int j = MIN_SEGMENT; j <= MAX_SEGMENT; j++)
+			for(int j = MIN_SEGMENT; j <= MAX_SEGMENT; j++) {
 				schedule[i][j] = memento.schedule[i][j];
+				notifyListener(i, j);
+			}
 	}
 }

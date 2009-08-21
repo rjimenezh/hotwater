@@ -115,6 +115,15 @@ public class ScheduleManager {
 	}
 	
 	/**
+	 * Defines whether undo operations are available.
+	 * 
+	 * @return Whether calling undo() will actually undo anything.
+	 */
+	public boolean canUndo() {
+		return !(mementos.isEmpty());
+	}
+	
+	/**
 	 * Undoes latest change to the schedule.
 	 */
 	public void undo() {

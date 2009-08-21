@@ -23,5 +23,17 @@ public class ScheduleManagerTest extends TestCase {
 		mgr.undo();
 		assertFalse("Undo is broken (2)", mgr.get(1, 43));
 	}
+	
+	/**
+	 * Test method for {@link com.modelesis.hotwater.model.ScheduleManager#canUndo()}.
+	 */
+	public void testCanUndo() {
+		ScheduleManager mgr = new ScheduleManager();
+		assertFalse("canUndo() is broken (1)", mgr.canUndo());
+		mgr.toggle(1, 43);
+		assertTrue("canUndo() is broken (2)", mgr.canUndo());
+		mgr.undo();
+		assertFalse("canUndo() is broken (3)", mgr.canUndo());
+	}
 
 }

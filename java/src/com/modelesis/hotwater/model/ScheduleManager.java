@@ -6,6 +6,7 @@ package com.modelesis.hotwater.model;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import java.util.prefs.Preferences;
 
 /**
  * The ScheduleManager class defines
@@ -16,6 +17,8 @@ import java.util.List;
  *
  */
 public class ScheduleManager {
+	
+	private static final String SCHEDULE_KEY = "HOTWATER_SCHEDULE";
 	
 	/** Underlying schedule. */
 	protected Schedule schedule;
@@ -39,6 +42,28 @@ public class ScheduleManager {
 	 */
 	public void addScheduleChangeListener(ScheduleChangeListener lst) {
 		schedule.addScheduleChangeListener(lst);
+	}
+	
+	/**
+	 * Loads the schedule from
+	 * the current user's preferences store.
+	 */
+	public void loadSchedule() {
+		Preferences prefs = Preferences.userNodeForPackage(ScheduleManager.class);
+		String serSched = prefs.get(SCHEDULE_KEY, "");
+		ScheduleDAO dao = new ScheduleDAO();
+		schedule = dao.deSerialize(serSched);
+	}
+	
+	/**
+	 * Saves the schedule from the
+	 * current user's preferences store.
+	 */
+	public void saveSchedule() {
+		ScheduleDAO dao = new ScheduleDAO();
+		String serSched = dao.serialize(schedule);
+		Preferences prefs = Preferences.userNodeForPackage(ScheduleManager.class);
+		prefs.put(SCHEDULE_KEY, serSched);
 	}
 	
 	/**

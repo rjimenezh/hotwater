@@ -43,4 +43,45 @@ public class ScheduleDAO {
 		
 		return serSched;
 	}
+	
+	/**
+	 * Serializes the schedule into a string variable.
+	 * This simply produces a string representation of
+	 * the byte array used to synchronize the HotWater device.
+	 * 
+	 * @param sched Schedule object to serialize
+	 * @return Serialized version of schedule object
+	 */
+	public String serialize(Schedule sched) {
+		byte[] serSched = serializeScheduleToHardware(sched);
+		StringBuilder sb = new StringBuilder();
+		for(int i = 0; i < serSched.length; i++)
+			sb.append(serSched[i]).append(",");
+		
+		return sb.toString();
+	}
+	
+	/**
+	 * Produces a schedule object given a string serialization
+	 * of a previous schedule object.
+	 * 
+	 * @param ser Serialized version of schedule object
+	 * @return De-serialized schedule object
+	 */
+	public Schedule deSerialize(String ser) {
+		Schedule sched = new Schedule();
+		try {
+			String[] entries = ser.split(",");
+			for(int i = 0; i < entries.length; i++) {
+				int day = i / 24;
+				int hour = i % 24;
+				byte hourSched = Byte.parseByte(entries[i]);
+				for(int segment = 0; segment < 6; segment++)
+					sched.schedule[day][6 * hour + segment] =
+						((1 << segment) & hourSched) > 0;
+			}
+		}
+		catch(Throwable e) {}
+		return sched;
+	}
 }

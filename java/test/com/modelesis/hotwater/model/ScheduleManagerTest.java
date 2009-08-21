@@ -35,5 +35,18 @@ public class ScheduleManagerTest extends TestCase {
 		mgr.undo();
 		assertFalse("canUndo() is broken (3)", mgr.canUndo());
 	}
+	
+	/**
+	 * Test method for {@link com.modelesis.hotwater.model.ScheduleManager#saveSchedule()}.
+	 */
+	public void testLoadAndSave() {
+		ScheduleManager mgr = new ScheduleManager();
+		mgr.toggle(1, 43);
+		mgr.saveSchedule();
+		mgr = new ScheduleManager();
+		mgr.loadSchedule();
+		assertTrue("Load/save are broken (1)", mgr.get(1, 43));
+		assertFalse("Load/save are broken (2)", mgr.get(5, 109));
+	}
 
 }

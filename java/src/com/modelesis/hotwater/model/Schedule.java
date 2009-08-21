@@ -3,6 +3,9 @@
  */
 package com.modelesis.hotwater.model;
 
+import java.util.ArrayList;
+import java.util.List;
+
 
 /**
  * Defines an operational schedule
@@ -37,8 +40,8 @@ public class Schedule {
 	/** Actual schedule - One bolean per weekday/segment coordinate. */
 	protected boolean[][] schedule;
 	
-	/** Schedule change listener. */
-	protected ScheduleChangeListener listener;
+	/** Schedule change listeners. */
+	protected List<ScheduleChangeListener> listeners;
 	
 	/**
 	 * Creates a new Schedule object.
@@ -47,6 +50,7 @@ public class Schedule {
 		schedule = new boolean[WEEK_DAYS][];
 		for(int i = 0; i < WEEK_DAYS; i++)
 			schedule[i] = new boolean[SEGMENTS_PER_DAY];
+		listeners = new ArrayList<ScheduleChangeListener>();
 	}
 	
 	/**
@@ -54,8 +58,8 @@ public class Schedule {
 	 * 
 	 * @param lst Listener to bind to this schedule
 	 */
-	public void setScheduleChangeListener(ScheduleChangeListener lst) {
-		listener = lst;
+	public void addScheduleChangeListener(ScheduleChangeListener lst) {
+		listeners.add(lst);
 	}
 	
 	/**
@@ -68,7 +72,7 @@ public class Schedule {
 	public void toggle(int weekDay, int segment) {
 		validateInput(weekDay, segment);
 		schedule[weekDay][segment] = !schedule[weekDay][segment];
-		notifyListener(weekDay, segment);
+		notifyListeners(weekDay, segment);
 	}
 	
 	/**
@@ -91,7 +95,7 @@ public class Schedule {
 		for(int i = MIN_WEEKDAY; i <= MAX_WEEKDAY; i++)
 			for(int j = MIN_SEGMENT; j <= MAX_SEGMENT; j++) {
 				schedule[i][j] = false;
-				notifyListener(i, j);
+				notifyListeners(i, j);
 			}
 	}
 	
@@ -108,7 +112,7 @@ public class Schedule {
 			if(i != weekDay) {
 				for(int j = MIN_SEGMENT; j <= MAX_SEGMENT; j++) {
 					schedule[i][j] = schedule[weekDay][j];
-					notifyListener(i, j);
+					notifyListeners(i, j);
 				}		
 			}
 	}
@@ -125,7 +129,7 @@ public class Schedule {
 		int i = 6 - weekDay;
 		for(int j = MIN_SEGMENT; j <= MAX_SEGMENT; j++) {
 			schedule[i][j] = schedule[weekDay][j];
-			notifyListener(i, j);
+			notifyListeners(i, j);
 		}
 	}
 	
@@ -141,7 +145,7 @@ public class Schedule {
 			if(i != weekDay) {
 				for(int j = MIN_SEGMENT; j <= MAX_SEGMENT; j++) {
 					schedule[i][j] = schedule[weekDay][j];
-					notifyListener(i, j);
+					notifyListeners(i, j);
 				}
 			}
 	}
@@ -159,8 +163,14 @@ public class Schedule {
 			throw new IllegalArgumentException();
 	}
 	
-	protected void notifyListener(int weekDay, int segment) {
-		if(listener != null)
+	/**
+	 * Notifiy registered listeners of a change event.
+	 * 
+	 * @param weekDay Week day that changed
+	 * @param segment Segment that changed
+	 */
+	protected void notifyListeners(int weekDay, int segment) {
+		for(ScheduleChangeListener listener : listeners)
 			listener.scheduleChanged(weekDay, segment);
 	}
 	
@@ -182,9 +192,10 @@ public class Schedule {
 	 */
 	protected void restoreStatus(ScheduleMemento memento) {
 		for(int i = MIN_WEEKDAY; i <= MAX_WEEKDAY; i++)
-			for(int j = MIN_SEGMENT; j <= MAX_SEGMENT; j++) {
-				schedule[i][j] = memento.schedule[i][j];
-				notifyListener(i, j);
-			}
+			for(int j = MIN_SEGMENT; j <= MAX_SEGMENT; j++)
+				if(schedule[i][j] != memento.schedule[i][j]) { 
+					schedule[i][j] = memento.schedule[i][j];
+					notifyListeners(i, j);
+				}
 	}
 }

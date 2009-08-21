@@ -37,8 +37,8 @@ public class ScheduleManager {
 	 * 
 	 * @param lst Schedule change listener to bind to schedule
 	 */
-	public void setScheduleChangeListener(ScheduleChangeListener lst) {
-		schedule.setScheduleChangeListener(lst);
+	public void addScheduleChangeListener(ScheduleChangeListener lst) {
+		schedule.addScheduleChangeListener(lst);
 	}
 	
 	/**
@@ -75,9 +75,13 @@ public class ScheduleManager {
 	 * @param weekDay Day of week whose programming will be replicated
 	 */
 	public void normalizeWeek(int weekDay) {
-		ScheduleMemento memento = schedule.getMemento();
-		schedule.normalizeWeek(weekDay);
-		mementos.add(memento);
+		mementos.add(schedule.getMemento());
+		try {
+			schedule.normalizeWeek(weekDay);
+		}
+		catch(Throwable t) {
+			mementos.remove(mementos.size() - 1);
+		}
 	}
 
 	/**
@@ -86,9 +90,13 @@ public class ScheduleManager {
 	 * @param weekDay Day of week whose programming will be replicated
 	 */
 	public void normalizeWeekDays(int weekDay) {
-		ScheduleMemento memento = schedule.getMemento();
-		schedule.normalizeWeekDays(weekDay);
-		mementos.add(memento);
+		mementos.add(schedule.getMemento());
+		try {
+			schedule.normalizeWeekDays(weekDay);
+		}
+		catch(Throwable t) {
+			mementos.remove(mementos.size() - 1);
+		}
 	}
 
 	/**
@@ -97,9 +105,13 @@ public class ScheduleManager {
 	 * @param weekDay Day of week whose programming will be replicated
 	 */
 	public void normalizeWeekends(int weekDay) {
-		ScheduleMemento memento = schedule.getMemento();
-		schedule.normalizeWeekends(weekDay);
-		mementos.add(memento);
+		mementos.add(schedule.getMemento());
+		try {
+			schedule.normalizeWeekends(weekDay);
+		}
+		catch(Throwable t) {
+			mementos.remove(mementos.size() - 1);
+		}
 	}
 
 	/**
@@ -109,9 +121,13 @@ public class ScheduleManager {
 	 * @param segment Segment: 0 - 00:00/00:09; 143 - 23:50/23:59
 	 */
 	public void toggle(int weekDay, int segment) {
-		ScheduleMemento memento = schedule.getMemento();
-		schedule.toggle(weekDay, segment);
-		mementos.add(memento);
+		mementos.add(schedule.getMemento());
+		try {
+			schedule.toggle(weekDay, segment);
+		}
+		catch(Throwable t) {
+			mementos.remove(mementos.size() - 1);
+		}
 	}
 	
 	/**
@@ -130,8 +146,7 @@ public class ScheduleManager {
 		int lastMemento = mementos.size();
 		if(lastMemento > 0) {
 			lastMemento--;
-			schedule.restoreStatus(mementos.get(lastMemento));
-			mementos.remove(lastMemento);
+			schedule.restoreStatus(mementos.remove(lastMemento));
 		}
 	}
 }

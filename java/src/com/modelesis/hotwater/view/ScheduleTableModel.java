@@ -35,7 +35,7 @@ implements ScheduleChangeListener {
 	 */
 	public ScheduleTableModel(ScheduleManager mgr) {
 		scheduleManager = mgr;
-		mgr.setScheduleChangeListener(this);
+		mgr.addScheduleChangeListener(this);
 		hourFormat = new SimpleDateFormat("h:00aa");
 	}
 

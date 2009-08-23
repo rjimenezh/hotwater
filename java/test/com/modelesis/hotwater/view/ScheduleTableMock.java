@@ -8,6 +8,8 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.UIManager;
 
+import com.modelesis.hotwater.control.ToggleScheduleController;
+import com.modelesis.hotwater.control.ViewScheduleController;
 import com.modelesis.hotwater.model.ScheduleManager;
 
 /**
@@ -29,8 +31,9 @@ public class ScheduleTableMock {
 		JTable schedule = new JTable();
 		ScheduleTableCellRenderer renderer = new ScheduleTableCellRenderer();
 		ScheduleTableSelectionListener listener =
-			new ScheduleTableSelectionListener(mgr, schedule);
-		schedule.setModel(new ScheduleTableModel(mgr));
+			new ScheduleTableSelectionListener(
+				new ToggleScheduleController(mgr), schedule);
+		schedule.setModel(new ScheduleTableModel(new ViewScheduleController(mgr)));
 		schedule.getSelectionModel().addListSelectionListener(listener);
 		schedule.setDefaultRenderer(String.class, renderer);
 		schedule.setDefaultRenderer(Boolean.class, renderer);

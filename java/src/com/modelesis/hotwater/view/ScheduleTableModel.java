@@ -8,8 +8,8 @@ import java.util.Calendar;
 
 import javax.swing.table.AbstractTableModel;
 
+import com.modelesis.hotwater.control.ViewScheduleController;
 import com.modelesis.hotwater.model.ScheduleChangeListener;
-import com.modelesis.hotwater.model.ScheduleManager;
 
 /**
  * The ScheduleTableModel class defines a Swing
@@ -22,8 +22,8 @@ import com.modelesis.hotwater.model.ScheduleManager;
 public class ScheduleTableModel extends AbstractTableModel
 implements ScheduleChangeListener {
 	
-	/** Associated schedule manager. */
-	protected ScheduleManager scheduleManager;
+	/** Associated controller. */
+	protected ViewScheduleController controller;
 	
 	/** Hour format object. */
 	protected SimpleDateFormat hourFormat;
@@ -31,11 +31,11 @@ implements ScheduleChangeListener {
 	/**
 	 * Constructs a new instance of the class.
 	 * 
-	 * @param mgr Schedule manager to associate this table model to
+	 * @param ctrl Controller to associate this model to
 	 */
-	public ScheduleTableModel(ScheduleManager mgr) {
-		scheduleManager = mgr;
-		mgr.addScheduleChangeListener(this);
+	public ScheduleTableModel(ViewScheduleController ctrl) {
+		controller = ctrl;
+		controller.addScheduleChangeListener(this);
 		hourFormat = new SimpleDateFormat("h:00aa");
 	}
 
@@ -104,8 +104,7 @@ implements ScheduleChangeListener {
 		}
 		else { // Actual schedule data
 			if(columnIndex == 7) columnIndex = 0;  // Sunday
-			boolean val = scheduleManager.get(columnIndex, rowIndex);
-			return val;
+			return controller.isHeaterOn(columnIndex, rowIndex);
 		}
 	}
 

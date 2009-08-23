@@ -7,7 +7,7 @@ import javax.swing.JTable;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
-import com.modelesis.hotwater.model.ScheduleManager;
+import com.modelesis.hotwater.control.ToggleScheduleController;
 
 /**
  * @author ramon
@@ -15,8 +15,8 @@ import com.modelesis.hotwater.model.ScheduleManager;
  */
 public class ScheduleTableSelectionListener implements ListSelectionListener {
 
-	/** Schedule manager associated with this listener. */
-	protected ScheduleManager scheduleManager;
+	/** Controller associated with this listener. */
+	protected ToggleScheduleController toggleScheduleController;
 	
 	/** Schedule table associated with this listener. */
 	protected JTable scheduleTable;
@@ -24,11 +24,11 @@ public class ScheduleTableSelectionListener implements ListSelectionListener {
 	/**
 	 * Constructs a new selection listener.
 	 * 
-	 * @param mgr Manager to associate to this listener
+	 * @param ctrl Controller to associate to this listener
 	 * @param table Table to associate to this listener
 	 */
-	public ScheduleTableSelectionListener(ScheduleManager mgr, JTable table) {
-		scheduleManager = mgr;
+	public ScheduleTableSelectionListener(ToggleScheduleController ctrl, JTable table) {
+		toggleScheduleController = ctrl;
 		scheduleTable = table;
 	}
 	
@@ -48,7 +48,7 @@ public class ScheduleTableSelectionListener implements ListSelectionListener {
 				int weekDay = day;
 				if(day != 0) {	// Skip hour column selections
 					if(day == 7) weekDay = 0; // Sunday
-					scheduleManager.toggle(weekDay, segment);
+					toggleScheduleController.toggleSchedule(weekDay, segment);
 				}
 			}
 		

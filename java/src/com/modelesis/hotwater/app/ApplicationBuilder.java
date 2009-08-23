@@ -3,12 +3,17 @@
  */
 package com.modelesis.hotwater.app;
 
+import java.awt.Component;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTable;
 import javax.swing.UIManager;
@@ -51,10 +56,17 @@ public class ApplicationBuilder {
 		catch(Exception e) {e.printStackTrace();}
 
 		scheduleManager = new ScheduleManager();
-		new SchedulePersistenceController(scheduleManager);
+		// The following line automatically loads the
+		// last saved schedule
+		SchedulePersistenceController persistenceController = 
+			new SchedulePersistenceController(scheduleManager);
+		//
 		JTable scheduleTable = buildScheduleTable();
-		JPanel buttonPanel = buildButtonPanel(scheduleTable);
+		JPanel buttonPanel = buildButtonPanel(persistenceController, scheduleTable);
 		mainWindow = new MainWindow(scheduleTable, buttonPanel);
+		WindowListener mainWindowListener =
+			buildMainWindowListener(persistenceController, mainWindow);
+		mainWindow.addWindowListener(mainWindowListener);
 	}
 	
 	/**
@@ -87,7 +99,8 @@ public class ApplicationBuilder {
 	 * 
 	 * @return Instantiated button panel
 	 */
-	private JPanel buildButtonPanel(JTable scheduleTable) {
+	private JPanel buildButtonPanel(
+	SchedulePersistenceController persistenceController, JTable scheduleTable) {
 		JPanel buttonPanel = new JPanel();
 		buttonPanel.setBorder(BorderFactory.createEtchedBorder());
 		buttonPanel.setLayout(new FlowLayout());
@@ -100,6 +113,8 @@ public class ApplicationBuilder {
 		//
 		UndoController undoController = new UndoController(scheduleManager);
 		buttonPanel.add(buildUndoButton(undoController));
+		//
+		buttonPanel.add(buildSaveButton(persistenceController));
 		//
 		return buttonPanel;
 	}
@@ -172,6 +187,63 @@ public class ApplicationBuilder {
 			}
 		});
 		return btnUndo;
+	}
+	
+	/**
+	 * Builds the application UI's "Save" button.
+	 * 
+	 * @return Instantiated save button
+	 */
+	private Component buildSaveButton(
+	final SchedulePersistenceController persistenceController) {
+		final JButton btnSave = new JButton("Guardar");
+		btnSave.setEnabled(persistenceController.hasPendingChanges());
+		btnSave.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent evt) {
+				persistenceController.save();
+				btnSave.setEnabled(false);
+			}
+		});
+		persistenceController.addScheduleChangeListener(
+			new ScheduleChangeListener() {
+				public void scheduleChanged(int day, int segment) {
+					btnSave.setEnabled(persistenceController.hasPendingChanges());
+				}
+		});
+		return btnSave;
+	}
+	/**
+	 * Builds the main window listener,
+	 * which prevents the main window
+	 * from being closed if there are
+	 * unsaved changes to the schedule,
+	 * unless the user explicitly states
+	 * so.
+	 * 
+	 * @param persistenceController
+	 * @param mainWindow
+	 * @return MainWindow listener
+	 */
+	private WindowListener buildMainWindowListener(
+	final SchedulePersistenceController persistenceController,
+	final MainWindow mainWindow) {
+		return new WindowAdapter() {
+			public void windowClosing(WindowEvent evt) {
+				boolean canExit = true;
+				if(persistenceController.hasPendingChanges()) {
+					if(JOptionPane.showConfirmDialog(
+						mainWindow,
+						"Hay cambios pendientes de guardar.  ¿Desea salir sin guardarlos?",
+						"¿Salir sin Guardar Cambios?",
+						JOptionPane.YES_NO_OPTION,
+						JOptionPane.QUESTION_MESSAGE
+					) == JOptionPane.NO_OPTION)
+						canExit = false;
+				}
+				if(canExit)
+					System.exit(0);
+			}
+		};
 	}
 
 	/**

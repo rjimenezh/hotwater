@@ -24,4 +24,20 @@ public class SchedulePersistenceController extends UseCaseController {
 		// Load Schedule is implemented thus:
 		scheduleManager.loadSchedule();
 	}
+	
+	/**
+	 * Determines whether the schedule has pending changes.
+	 * 
+	 * @return whether the schedule has pending changes.
+	 */
+	public boolean hasPendingChanges() {
+		return scheduleManager.hasChangedSinceLastSaved();
+	}
+	
+	/**
+	 * Saves current schedule to persistent store.
+	 */
+	public void save() {
+		scheduleManager.saveSchedule();
+	}
 }

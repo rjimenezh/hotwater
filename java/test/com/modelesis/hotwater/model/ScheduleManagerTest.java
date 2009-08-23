@@ -42,11 +42,14 @@ public class ScheduleManagerTest extends TestCase {
 	public void testLoadAndSave() {
 		ScheduleManager mgr = new ScheduleManager();
 		mgr.toggle(1, 43);
+		assertTrue("Last saved semantics are broken (1)",
+			mgr.hasChangedSinceLastSaved());
 		mgr.saveSchedule();
 		mgr = new ScheduleManager();
 		mgr.loadSchedule();
 		assertTrue("Load/save are broken (1)", mgr.get(1, 43));
 		assertFalse("Load/save are broken (2)", mgr.get(5, 109));
+		assertFalse("Last saved semantics are broken (2)",
+				mgr.hasChangedSinceLastSaved());
 	}
-
 }

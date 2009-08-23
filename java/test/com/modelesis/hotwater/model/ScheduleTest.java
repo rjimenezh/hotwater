@@ -129,4 +129,19 @@ public class ScheduleTest extends TestCase {
 	 */
 	public void testRestoreMemento() {
 	}
+	
+	/**
+	 * Test method for {@link com.modelesis.hotwater.model.Schedule#copyInto(Schedule)}.
+	 */
+	public void testCopyInto() {
+		Schedule origSched = new Schedule();
+		origSched.toggle(1, 42);
+		origSched.toggle(1, 43);
+		Schedule clonedSched = new Schedule();
+		origSched.copyInto(clonedSched);
+		assertEquals("copyInto/equals are broken (1)", origSched, clonedSched);
+		clonedSched.toggle(1, 43);
+		assertFalse("equals is broken (1)", origSched.equals(clonedSched));
+		assertFalse("equals is broken (1)", clonedSched.equals(origSched));
+	}
 }

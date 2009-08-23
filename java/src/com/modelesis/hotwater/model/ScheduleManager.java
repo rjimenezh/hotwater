@@ -23,6 +23,9 @@ public class ScheduleManager {
 	/** Underlying schedule. */
 	protected Schedule schedule;
 	
+	/** Last saved schedule. */
+	protected Schedule lastSavedSchedule;
+	
 	/** Mementos used for undo and redo. */
 	protected List<ScheduleMemento> mementos;
 	
@@ -52,7 +55,19 @@ public class ScheduleManager {
 		Preferences prefs = Preferences.userNodeForPackage(ScheduleManager.class);
 		String serSched = prefs.get(SCHEDULE_KEY, "");
 		ScheduleDAO dao = new ScheduleDAO();
-		schedule = dao.deSerialize(serSched);
+		Schedule deSerSched = dao.deSerialize(serSched);
+		schedule = new Schedule(deSerSched); // so as not to affect listeners! 
+		lastSavedSchedule = new Schedule(schedule);
+	}
+	
+	/**
+	 * States whether the schedule has pending
+	 * changes against its last loaded version.
+	 *  
+	 * @return Whether the schedule is 'dirty'
+	 */
+	public boolean hasChangedSinceLastSaved() {
+		return !(schedule.equals(lastSavedSchedule));
 	}
 	
 	/**
@@ -64,6 +79,11 @@ public class ScheduleManager {
 		String serSched = dao.serialize(schedule);
 		Preferences prefs = Preferences.userNodeForPackage(ScheduleManager.class);
 		prefs.put(SCHEDULE_KEY, serSched);
+		// lastSavedSchedule could be null if
+		// the schedule is being saved without having
+		// being loaded first, or if loading failed
+		if(lastSavedSchedule != null)
+			schedule.copyInto(lastSavedSchedule);
 	}
 	
 	/**

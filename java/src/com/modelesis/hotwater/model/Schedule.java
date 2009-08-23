@@ -54,6 +54,19 @@ public class Schedule {
 	}
 	
 	/**
+	 * 'Copy constructor' - produces two equivalent
+	 * schedules as per {{@link #equals(Object)}.
+	 * 
+	 * @param origSchedule Schedule to copy
+	 * 
+	 * @see Schedule#copyInto(Schedule)
+	 */
+	public Schedule(Schedule origSchedule) {
+		this();
+		origSchedule.copyInto(this);
+	}
+	
+	/**
 	 * Associate a schedule change listener to this schedule.
 	 * 
 	 * @param lst Listener to bind to this schedule
@@ -150,6 +163,43 @@ public class Schedule {
 			}
 	}
 	
+	/**
+	 * Determines if another Schedule object
+	 * equals this one.  This only compares
+	 * heater power scheduling and not listeners.
+	 * 
+	 * @return whether the schedules are equivalent
+	 */
+	@Override
+	public boolean equals(Object obj) {
+		if(obj == null)
+			return false;
+		if(!(obj instanceof Schedule))
+			return false;
+		
+		Schedule other = (Schedule)obj;
+		for(int i = MIN_WEEKDAY; i <= MAX_WEEKDAY; i++)
+			for(int j = MIN_SEGMENT; j <= MAX_SEGMENT; j++)
+				if(schedule[i][j] != other.schedule[i][j])
+					return false;
+		
+		return true;
+	}
+	
+	/**
+	 * Ensures the specified schedule
+	 * is identical to this schedule as far
+	 * as heater power is concerned.  No listeners
+	 * are triggered as part of this operation.
+	 * 
+	 * @param other Schedule to equate to this one
+	 */
+	protected void copyInto(Schedule other) {
+		for(int i = MIN_WEEKDAY; i <= MAX_WEEKDAY; i++)
+			for(int j = MIN_SEGMENT; j <= MAX_SEGMENT; j++)
+				other.schedule[i][j] = schedule[i][j];		
+	}
+
 	/**
 	 * Validates input parameters.
 	 * 

@@ -27,7 +27,7 @@ public class MainWindow extends JFrame {
 	 */
 	public MainWindow(JTable scheduleTable, JPanel buttonPanel) {
 		super("HotWater");
-		setDefaultCloseOperation(EXIT_ON_CLOSE);
+		setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
 		JTabbedPane tabs = new JTabbedPane();
 		JPanel mainPanel = new JPanel();
 		mainPanel.setLayout(new BorderLayout());

@@ -86,6 +86,14 @@ public class ScheduleTest extends TestCase {
 		assertTrue("normalizeWeekends is broken (4)", sched.get(0, 57));
 		assertTrue("normalizeWeekends is broken (5)", sched.get(0, 58));
 		assertFalse("normalizeWeekends is broken (6)", sched.get(1, 1));
+		//
+		sched.clear();
+		sched.toggle(1, 43); // Mondays 7:10 AM
+		sched.normalizeWeekends(1);
+		assertTrue("normalizeWeekends is broken (7)", sched.get(0, 43));
+		assertTrue("normalizeWeekends is broken (8)", sched.get(6, 43));
+		assertFalse("normalizeWeekends is broken (9)", sched.get(0, 42));
+		assertFalse("normalizeWeekends is broken (10)", sched.get(0, 99));
 	}
 
 	/**

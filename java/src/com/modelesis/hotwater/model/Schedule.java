@@ -119,8 +119,7 @@ public class Schedule {
 	 * @param weekDay Week day (Mon-Fri) to normalize week schedule to
 	 */
 	public void normalizeWeekDays(int weekDay) {
-		if((weekDay < 1) || (weekDay > 5))
-			throw new IllegalArgumentException();
+		validateInput(weekDay, 0);
 		for(int i = 1; i <= 5; i++)
 			if(i != weekDay) {
 				for(int j = MIN_SEGMENT; j <= MAX_SEGMENT; j++) {
@@ -137,13 +136,15 @@ public class Schedule {
 	 * @param weekDay Weekend day (Sat, Sun) to normalize weekend schedule to
 	 */
 	public void normalizeWeekends(int weekDay) {
-		if((weekDay != 0) && (weekDay != 6))
-			throw new IllegalArgumentException();
-		int i = 6 - weekDay;
-		for(int j = MIN_SEGMENT; j <= MAX_SEGMENT; j++) {
-			schedule[i][j] = schedule[weekDay][j];
-			notifyListeners(i, j);
-		}
+		validateInput(weekDay, 0);
+		int[] weekends = {0, 6};
+		for(int i : weekends)
+			if( i != weekDay) {
+				for(int j = MIN_SEGMENT; j <= MAX_SEGMENT; j++) {
+					schedule[i][j] = schedule[weekDay][j];
+					notifyListeners(i, j);
+				}
+			}
 	}
 	
 	/**

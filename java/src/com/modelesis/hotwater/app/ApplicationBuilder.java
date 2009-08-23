@@ -18,6 +18,7 @@ import javax.swing.JPanel;
 import javax.swing.JTable;
 import javax.swing.UIManager;
 
+import com.modelesis.hotwater.control.NormalizationController;
 import com.modelesis.hotwater.control.SchedulePersistenceController;
 import com.modelesis.hotwater.control.ScrollScheduleController;
 import com.modelesis.hotwater.control.ToggleScheduleController;
@@ -79,15 +80,17 @@ public class ApplicationBuilder {
 		scheduleTable.setFillsViewportHeight(true);
 		scheduleTable.setCellSelectionEnabled(true);
 		//
-		scheduleTable.setModel(new ScheduleTableModel(
-				new ViewScheduleController(scheduleManager)));
+		ViewScheduleController viewScheduleController =
+			new ViewScheduleController(scheduleManager); 
+		scheduleTable.setModel(new ScheduleTableModel(viewScheduleController));
 		//
 		ScheduleTableSelectionListener listener =			
 			new ScheduleTableSelectionListener(
 				new ToggleScheduleController(scheduleManager), scheduleTable);
 		scheduleTable.getSelectionModel().addListSelectionListener(listener);
 		//
-		ScheduleTableCellRenderer renderer = new ScheduleTableCellRenderer();
+		ScheduleTableCellRenderer renderer = new ScheduleTableCellRenderer(
+			viewScheduleController);
 		scheduleTable.setDefaultRenderer(String.class, renderer);
 		scheduleTable.setDefaultRenderer(Boolean.class, renderer);
 		//
@@ -110,6 +113,8 @@ public class ApplicationBuilder {
 		buttonPanel.add(buildMorningButton(scrollController));
 		buttonPanel.add(buildAfternoonButton(scrollController));
 		buttonPanel.add(buildEveningButton(scrollController));
+		//
+		buildNormalizeButtons(buttonPanel);
 		//
 		UndoController undoController = new UndoController(scheduleManager);
 		buttonPanel.add(buildUndoButton(undoController));
@@ -165,6 +170,53 @@ public class ApplicationBuilder {
 			}
 		});
 		return btnEvening;
+	}
+	
+	/**
+	 * Builds the normalize UI buttons and adds them
+	 * to the button panel.
+	 * 
+	 * @param buttonPanel Panel to add normalized buttons to.
+	 */
+	private void buildNormalizeButtons(JPanel buttonPanel) {
+		final NormalizationController controller =
+			new NormalizationController(scheduleManager);
+		final JButton btnWorkdays = new JButton("L-V");
+		btnWorkdays.setEnabled(controller.canNormalize());
+		btnWorkdays.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent evt) {
+				controller.normalizeWorkDays();
+			}
+		});
+		buttonPanel.add(btnWorkdays);
+		//
+		final JButton btnWeekends= new JButton("S-D");
+		btnWeekends.setEnabled(controller.canNormalize());
+		btnWeekends.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent evt) {
+				controller.normalizeWeekends();
+			}
+		});
+		buttonPanel.add(btnWeekends);
+		//
+		final JButton btnWeek = new JButton("L-D");
+		btnWeek.setEnabled(controller.canNormalize());
+		btnWeek.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent evt) {
+				controller.normalizeWeek();
+			}
+		});		
+		buttonPanel.add(btnWeek);
+		//
+		ScheduleChangeListener changeListener = new ScheduleChangeListener() {
+			public void scheduleChanged(int day, int segment) {
+				boolean canNormalize = controller.canNormalize();
+				btnWorkdays.setEnabled(canNormalize);
+				btnWeekends.setEnabled(canNormalize);
+				btnWeek.setEnabled(canNormalize);
+			}
+		};
+		scheduleManager.addScheduleChangeListener(changeListener);
 	}
 	
 	/**

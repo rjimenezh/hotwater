@@ -41,7 +41,17 @@ public class ScheduleTableSelectionListener implements ListSelectionListener {
 		if(evt.getValueIsAdjusting())
 			return;
 		
-		for(int day : scheduleTable.getSelectedColumns())
+		// Update selected day as relevant
+		int[] days = scheduleTable.getSelectedColumns();
+		if(days.length == 1) {
+			int selectedDay = days[0];
+			if(selectedDay > 0)
+				toggleScheduleController.setSelectedDay(
+					scheduleTable.getSelectedColumn());
+		}
+		
+		// Toggle schedule as per user input
+		for(int day : days)
 			for(int segment : scheduleTable.getSelectedRows()) {
 				// 'day' cannot be modified
 				// lest Sunday multiple selections don't work...

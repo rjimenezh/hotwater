@@ -116,9 +116,17 @@ implements ScheduleChangeListener {
 		return false;
 	}
 
+	/**
+	 * Processes a schedule changed notification,
+	 * used in turn to ask Swing to visually update
+	 * the schedule table as relevant.
+	 */
 	@Override
 	public void scheduleChanged(int day, int segment) {
 		if(day == 0) day = 7;  // Sunday
-		fireTableCellUpdated(segment, day);
+		// The entire column is marked updated
+		// in order to cater for selected day changes 
+		for(segment = 0; segment < 144; segment++)
+			fireTableCellUpdated(segment, day);
 	}	
 }

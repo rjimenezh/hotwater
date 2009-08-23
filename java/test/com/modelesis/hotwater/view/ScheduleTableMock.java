@@ -29,11 +29,13 @@ public class ScheduleTableMock {
 		mgr.toggle(1, 47);
 		//
 		JTable schedule = new JTable();
-		ScheduleTableCellRenderer renderer = new ScheduleTableCellRenderer();
+		ViewScheduleController viewSchedController = new ViewScheduleController(mgr);
+		ScheduleTableCellRenderer renderer = new ScheduleTableCellRenderer(
+			viewSchedController);
 		ScheduleTableSelectionListener listener =
 			new ScheduleTableSelectionListener(
 				new ToggleScheduleController(mgr), schedule);
-		schedule.setModel(new ScheduleTableModel(new ViewScheduleController(mgr)));
+		schedule.setModel(new ScheduleTableModel(viewSchedController));
 		schedule.getSelectionModel().addListSelectionListener(listener);
 		schedule.setDefaultRenderer(String.class, renderer);
 		schedule.setDefaultRenderer(Boolean.class, renderer);

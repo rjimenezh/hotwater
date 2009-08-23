@@ -31,4 +31,15 @@ public class ToggleScheduleController extends UseCaseController {
 	public void toggleSchedule(int day, int segment) {
 		scheduleManager.toggle(day, segment);
 	}
+	
+	/**
+	 *
+	 * Updates the last selected day.
+	 * 
+	 * @param selectedDay Index of last individual column the user clicked over
+	 */
+	@SuppressWarnings("static-access")
+	public void setSelectedDay(int selectedDay) {
+		this.selectedDay = selectedDay;
+	}
 }

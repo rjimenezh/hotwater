@@ -7,9 +7,13 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Font;
 
+import javax.swing.BorderFactory;
 import javax.swing.JLabel;
 import javax.swing.JTable;
+import javax.swing.border.Border;
 import javax.swing.table.TableCellRenderer;
+
+import com.modelesis.hotwater.control.ViewScheduleController;
 
 /**
  * The ScheduleTableCellRenderer class
@@ -39,19 +43,41 @@ public class ScheduleTableCellRenderer extends JLabel implements TableCellRender
 	/** Background color for passive (heater off) segments. */
 	protected Color passiveSegmentBackground;
 	
+	protected ViewScheduleController controller;
+	
+	protected Border standardBorder;
+	
+	protected Color selectedColor;
+	
+	protected Border topSelectedBorder;
+	
+	protected Border midSelectedBorder;
+	
+	protected Border bottomSelectedBorder;
+	
 	/**
 	 * Constructs a new cell renderer object.
 	 */
-	public ScheduleTableCellRenderer() {
+	public ScheduleTableCellRenderer(ViewScheduleController ctrl) {
 		super("", RIGHT);
 		setOpaque(true);
 		hourColumnBackground = new Color(51, 102, 153);
 		hourColumnForeground = Color.white;
 		standardFont = getFont();
-		hourFont =
-			new Font(standardFont.getName(), Font.BOLD, standardFont.getSize());
+		hourFont = new Font(
+			standardFont.getName(), Font.BOLD, standardFont.getSize());
 		activeSegmentBackground = new Color(255, 255, 204);
-		passiveSegmentBackground = new Color(204, 204, 255); 
+		passiveSegmentBackground = new Color(204, 204, 255);
+		//		
+		standardBorder = getBorder();
+		selectedColor = Color.yellow;
+		topSelectedBorder = BorderFactory.createCompoundBorder(standardBorder,
+			BorderFactory.createMatteBorder(2, 2, 0, 2, selectedColor));
+		midSelectedBorder = BorderFactory.createCompoundBorder(standardBorder,
+			BorderFactory.createMatteBorder(0, 2, 0, 2, selectedColor));
+		bottomSelectedBorder = BorderFactory.createCompoundBorder(standardBorder,
+			BorderFactory.createMatteBorder(0, 2, 2, 2, selectedColor));
+		controller = ctrl;
 	}
 
 	/**
@@ -64,6 +90,7 @@ public class ScheduleTableCellRenderer extends JLabel implements TableCellRender
 			setBackground(hourColumnBackground);
 			setForeground(hourColumnForeground);
 			setText((String)value);
+			setBorder(standardBorder);
 			if(row % 6 == 0)  // Hour per se
 				setFont(hourFont);
 		}
@@ -75,6 +102,14 @@ public class ScheduleTableCellRenderer extends JLabel implements TableCellRender
 				setBackground(activeSegmentBackground);
 			else
 				setBackground(passiveSegmentBackground);
+			if(controller.getSelectedDay() == col)
+				switch(row) {
+					case 0: setBorder(topSelectedBorder); break;
+					case 143: setBorder(bottomSelectedBorder); break;
+					default: setBorder(midSelectedBorder);
+				}
+			else
+				setBorder(standardBorder);
 		}
 		
 		return this;

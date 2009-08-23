@@ -34,4 +34,13 @@ public class ViewScheduleController extends UseCaseController {
 	public boolean isHeaterOn(int day, int segment) {
 		return scheduleManager.get(day, segment);
 	}
+	
+	/**
+	 * Retrieves the last selected day.
+	 * 
+	 * @return index of last individual column the user clicked over
+	 */
+	public int getSelectedDay() {
+		return selectedDay;
+	}
 }

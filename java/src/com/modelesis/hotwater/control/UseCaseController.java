@@ -18,6 +18,9 @@ public abstract class UseCaseController {
 	/** Associated schedule manager object. */
 	protected ScheduleManager scheduleManager;
 	
+	/** Selected day - the day of the week the user last clicked over. */
+	protected static int selectedDay;
+	
 	/**
 	 * Constructs a new schedule controller object.
 	 * 

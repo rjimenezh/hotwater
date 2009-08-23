@@ -11,7 +11,7 @@ package com.modelesis.hotwater.app;
 public class HotWater {
 	
 	public static void main(String[] args) {
-		ApplicationFactory appFactory = new ApplicationFactory();
+		ApplicationBuilder appFactory = new ApplicationBuilder();
 		appFactory.buildApp();
 		appFactory.startApp();
 	}

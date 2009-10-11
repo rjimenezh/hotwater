@@ -21,7 +21,6 @@ const int acPower         = 9;
 #define  MT1     2
 #define  MT2     3
 #define  MT3     4
-#define  FAILED  5
 
 // Time unit definitions
 #define  HOURS_PER_WEEK     168
@@ -33,6 +32,13 @@ const int acPower         = 9;
 #define  MINUTES_PER_SEGMENT 10
 #endif
 #define  SEGMENTS_PER_HOUR  6
+
+// Haver we got AC power?
+boolean powerIsOn = false;
+
+// Did a scheduled run failed
+// because of no AC power?
+boolean lastRunFailed = false;
 
 // Heater state
 int state = OFF;
@@ -69,13 +75,14 @@ void setup() {
   pinMode(manualTimer3, OUTPUT);
   pinMode(automatic, OUTPUT);
   pinMode(heater, OUTPUT);
+  pinMode(acPower, INPUT);
 #ifdef DEBUG
   Serial.begin(9600);
   //
   for(int z = 0; z < HOURS_PER_WEEK; z++)
     schedule[z] = 0;
-  schedule[1] = B00111111;  // Sunday, 1:00 AM thru 1:30 AM
-  schedule[2] = B00110000;  // Sunday, 2:40 AM thru 3:00 AM
+  schedule[1] = B00111111;  // Sunday, 1:00 AM thru 2:00 AM
+  schedule[3] = B00110000;  // Sunday, 3:40 AM thru 4:00 AM
 #endif
 }
 
@@ -93,7 +100,14 @@ void loop() {
  * Also does some power management.
  */
 void waitASecond() {
-  delay(1000);
+  if(lastRunFailed) {
+    digitalWrite(automatic, HIGH);
+    delay(300);
+    digitalWrite(automatic, LOW);
+    delay(700);
+  }
+  else
+    delay(1000);
 }
 
 /**
@@ -102,6 +116,7 @@ void waitASecond() {
 void updateTime() {
   // Update time
   seconds++;
+  updateStateOnSecondChange();
   if(seconds % SECONDS_PER_MINUTE == 0) {
     seconds = 0;
     minutes++;
@@ -128,6 +143,14 @@ void updateTime() {
   
 /**
  * Performs any state changes as required
+ * by the fact that a second has elapsed.
+ */
+void updateStateOnSecondChange() {
+  powerIsOn = (digitalRead(acPower) == HIGH);
+}
+
+/**
+ * Performs any state changes as required
  * by the fact that a minute has elapsed.
  */
 void updateStateOnMinuteChange() {
@@ -138,8 +161,14 @@ void updateStateOnMinuteChange() {
   //   to turn off, otherwise leave as is (MTn state)
   if((state == OFF) || (state == AUTO)) {
     int currentSchedule = schedule[hour];
-    if(currentSchedule & (1 << segment))
-      state = AUTO;
+    if(currentSchedule & (1 << segment)) {
+      if(powerIsOn) {
+        lastRunFailed = false;
+        state = AUTO;
+      }
+      else
+        lastRunFailed = true;
+    }
     else
       state = OFF;
   } else {
@@ -172,12 +201,24 @@ void moPressed() {
   Serial.println("MO pressed");
 #endif
     
+  // Dont' act on no power, except if
+  // last run failed
+  if(!powerIsOn) {
+    if(lastRunFailed) {
+      state = OFF;
+      lastRunFailed = false;
+    }
+    
+    return;
+  }
+    
   // Modify state
   switch(state) {
     case OFF:  startManualRun(10); state = MT1; break;
     case MT1:  startManualRun(20); state = MT2; break;
     case MT2:  startManualRun(30); state = MT3; break;
-    default:
+    case MT3:
+    case AUTO:
       manualOverrideSegments = getRunSegments(segment);
       state = OFF;
       break;
@@ -215,9 +256,15 @@ void startManualRun(int nMinutes) {
 
 /**
  * Updates the control panel display.
- * Valid for all states except FAILED.
+ * Valid for all states except when
+ * last scheduled run has failed.
  */
 void updateControlPanel() {
+  if(lastRunFailed) {
+    digitalWrite(heater, OFF);
+    return;
+  }
+    
   int ledPins[] = { manualTimer1, manualTimer2, manualTimer3, automatic };
   int nLeds = 4;
   for(int i = 0; i < nLeds; i++)

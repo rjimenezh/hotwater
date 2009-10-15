@@ -4,7 +4,7 @@
  */
  
 // Debug flag - comment out for production
-#define  DEBUG  1
+// #define  DEBUG  1
  
 // Pin definitions
 const int manualOverride  = 3;
@@ -28,8 +28,8 @@ const int acPower         = 9;
 #define  SECONDS_PER_MINUTE  1
 #define  MINUTES_PER_SEGMENT 1
 #else
-#define  SECONDS_PER_MINUTE  60
-#define  MINUTES_PER_SEGMENT 10
+#define  SECONDS_PER_MINUTE  1  // 60
+#define  MINUTES_PER_SEGMENT 1  // 10
 #endif
 #define  SEGMENTS_PER_HOUR  6
 
@@ -62,6 +62,10 @@ int minutes = 0;
 int segment = 0;
 int hour = 0;
 
+// PC transfer constants
+const byte probeCmd[] = { 72, 87, 80 };  // 'HWP' - HotWater Probe
+const byte probeResp[] = { 72, 87, 80, 1 };
+
 /**
  * Firmware initialization.
  */
@@ -76,23 +80,53 @@ void setup() {
   pinMode(automatic, OUTPUT);
   pinMode(heater, OUTPUT);
   pinMode(acPower, INPUT);
-#ifdef DEBUG
-  Serial.begin(9600);
   //
+  Serial.begin(57600);
+//#ifdef DEBUG
   for(int z = 0; z < HOURS_PER_WEEK; z++)
     schedule[z] = 0;
   schedule[1] = B00111111;  // Sunday, 1:00 AM thru 2:00 AM
   schedule[3] = B00110000;  // Sunday, 3:40 AM thru 4:00 AM
-#endif
+//#endif
 }
 
 /**
  * Main loop.
  */
 void loop() {
-  updateTime();
-  updateControlPanel();
-  waitASecond();
+  if(Serial.available() >= 3) {
+    handleTransfer();
+  }
+  else {
+    updateTime();
+    updateControlPanel();
+    waitASecond();
+  }
+}
+
+/**
+ * Handle a PC data transfer.
+ * The Java PC software may
+ * in fact attempt two different
+ * operations: a probe, in order
+ * to detect the serial port that
+ * the HotWater device is using;
+ * or a transfer proper, where several
+ * values are transferred from the PC
+ * to the device.
+ */
+void handleTransfer() {
+    boolean isProbing = true;
+    for(int i = 0; i < 3; i++) {
+      int read = Serial.read();
+      if(read != probeCmd[i]) {
+        isProbing = false;
+        break;
+      }
+    }
+    //
+    if(isProbing)
+      Serial.write(probeResp, 4);
 }
 
 /**

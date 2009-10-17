@@ -34,12 +34,22 @@ public class SerialInterface {
 	/** Probe data sent to serial ports. */
 	private static final byte[] HOTWATER_PROBE = {(byte)'H', (byte)'W', (byte)'P'};
 	
-	/** Read wait timeout in milliseconds. */
-	private static final int READ_WAIT = 2500;
+	/** Arduino bootloader timeout in milliseconds. */
+	private static final int RESET_WAIT = 2500;
+	
+	/** HotWater firmware loop wait in milliseconds. */
+	private static final int LOOP_WAIT = 1000;
 	
 	/** String expected from attached HotWater device when probing. */
 	private static final byte[] HOTWATER_FOUND = {
 		(byte)'H', (byte)'W', (byte)'P', (byte)1};
+	
+	/** Transfer handshake sent to HotWater device. */
+	private static final byte[] TRANSFER_HANDSHAKE = {(byte)'H', (byte)'W', (byte)'T'};
+	
+	/** String expected from attached HotWater device when transferring. */
+	private static final byte[] TRANSFER_ACK = {
+		(byte)'H', (byte)'W', (byte)'T', (byte)1};
 	
 	/** Event listener. */
 	protected SerialStateListener listener;
@@ -83,11 +93,53 @@ public class SerialInterface {
 	 * Transfers the specified data to
 	 * the HotWater device on the specified port.
 	 * 
-	 * @param port Port where the HotWater device listens
+	 * @param portId Port where the HotWater device listens
 	 * @param data Data to send to the device
 	 */
-	public void transferData(CommPortIdentifier port, byte[] data) {
+	public void transferData(CommPortIdentifier portId, byte[] data) {
+		CommPort port = null;
 		
+		try {
+			notifyState(SerialState.OPENING_PORT, portId.getName());
+			port = portId.open("HotWaterPCSoft", OPEN_WAIT_MS);
+			InputStream is = null;
+			if(port instanceof SerialPort) {
+				notifyState(SerialState.CONNECTING, portId.getName());
+				SerialPort serialPort = (SerialPort)port;
+				serialPort.setSerialPortParams(BAUD_RATE,
+					SerialPort.DATABITS_8,
+					SerialPort.STOPBITS_1,
+					SerialPort.PARITY_NONE);
+				OutputStream os = port.getOutputStream();
+				is = port.getInputStream();
+				writeHandshake(os, TRANSFER_HANDSHAKE);
+				if(readAcknowledge(is, TRANSFER_ACK)) {
+					notifyState(SerialState.SENDING_DATA, portId.getName());
+					os.write(data, 0, data.length);
+					os.flush();
+					// Wait for ack...
+					try {
+						Thread.sleep(LOOP_WAIT);
+					} catch(InterruptedException ignored) {}
+					if(readAcknowledge(is, TRANSFER_ACK)) {
+						int bytes = is.read();
+						if(bytes == data.length)
+							notifyState(SerialState.DATA_SENT, null);
+						else
+							notifyState(SerialState.TRANSFER_ERROR, bytes + "/" + data.length);
+					}
+					else
+						notifyState(SerialState.TRANSFER_ERROR, "Final ack missing");
+				}
+			}
+		}
+		catch (PortInUseException ignored) { ignored.printStackTrace(); }
+		catch (UnsupportedCommOperationException ignored) { ignored.printStackTrace(); }
+		catch (IOException ignored) { ignored.printStackTrace(); }
+		finally {
+			if(port != null)
+				port.close();
+		}
 	}
 	
 	/**
@@ -113,32 +165,11 @@ public class SerialInterface {
 					SerialPort.STOPBITS_1,
 					SerialPort.PARITY_NONE);
 				OutputStream os = port.getOutputStream();
-				// Wait - Arduino is resetting...
-				try {
-					Thread.sleep(READ_WAIT);
-				} catch(InterruptedException ignored) {}
-				os.write(HOTWATER_PROBE, 0, 3);
-				os.flush();
-				// Give Arduino time to loop and process
-				try {
-					Thread.sleep(READ_WAIT);
-				} catch(InterruptedException ignored) {}
-
 				InputStream is = port.getInputStream();
-				if(is.available() >= HOTWATER_FOUND.length) {
-					boolean found = true;
-					for(int i = 0; i < HOTWATER_FOUND.length; i++) {
-						int read = is.read();
-						if(read != HOTWATER_FOUND[i]) {
-							found = false;
-							break;
-						}
-					}
-					
-					if(found) {
-						hotWaterPort = portId;
-						notifyState(SerialState.HOTWATER_FOUND, portId.getName());
-					}
+				writeHandshake(os, HOTWATER_PROBE);
+				if(readAcknowledge(is, HOTWATER_FOUND)) {
+					hotWaterPort = portId;
+					notifyState(SerialState.HOTWATER_FOUND, portId.getName());
 				}
 			}
 		}
@@ -151,6 +182,57 @@ public class SerialInterface {
 		}
 		
 		return hotWaterPort;
+	}
+	
+	/**
+	 * Writes a handshake sequence to the specified
+	 * output stream, considering Arduino bootloader
+	 * reset and loop times.
+	 * 
+	 * @param os Output stream to write handshake to
+	 * @param handShake Handshake data to send
+	 */
+	private void writeHandshake(OutputStream os, byte[] handShake) {
+		// Wait - Arduino is resetting...
+		try {
+			Thread.sleep(RESET_WAIT);
+		} catch(InterruptedException ignored) {}
+		try {
+			os.write(handShake, 0, 3);
+			os.flush();
+		} catch(IOException ignored) {}
+		// Now wait some more...
+		try {
+			Thread.sleep(LOOP_WAIT);
+		} catch(InterruptedException ignored) {}
+	}
+	
+	/**
+	 * Reads data from the specified input string
+	 * and determines if it matches the specified
+	 * acknowledge data.
+	 * 
+	 * @param is Input stream to read acknowledge from
+	 * @param ackData Data to assert acknowledge against
+	 * @return Whether an acknowledgment has been received
+	 */
+	private boolean readAcknowledge(InputStream is, byte[] ackData) {
+		boolean found = true;
+		
+		try {
+			if(is.available() < ackData.length)
+				return false;
+			for(int i = 0; i < ackData.length; i++) {
+				int read = is.read();
+				if(read != ackData[i]) {
+					found = false;
+					break;
+				}
+			}
+		}
+		catch(IOException ignored) {}
+		
+		return found;
 	}
 	
 	/**

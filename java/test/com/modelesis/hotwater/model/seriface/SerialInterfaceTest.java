@@ -3,9 +3,12 @@
  */
 package com.modelesis.hotwater.model.seriface;
 
-import com.modelesis.hotwater.model.seriface.SerialInterface;
-
+import gnu.io.CommPortIdentifier;
+import gnu.io.NoSuchPortException;
 import junit.framework.TestCase;
+
+import com.modelesis.hotwater.model.Schedule;
+import com.modelesis.hotwater.model.ScheduleDAO;
 
 /**
  * @author ramon
@@ -20,12 +23,30 @@ public class SerialInterfaceTest extends TestCase {
 		SerialInterface serialIface = new SerialInterface();
 		MockSerialStateListener listener = new MockSerialStateListener();
 		serialIface.setListener(listener);
-		System.err.println(serialIface.probeForHotWater());
+		//System.err.println(serialIface.probeForHotWater());
 	}
 
 	/**
 	 * Test method for {@link com.modelesis.hotwater.model.seriface.SerialInterface#transferData(gnu.io.CommPortIdentifier, byte[])}.
 	 */
 	public void testTransferData() {
+		Schedule sched = new Schedule();
+		sched.toggle(0, 42);
+		sched.toggle(0, 43);
+		sched.toggle(0, 44);
+		sched.toggle(0, 45);
+		sched.toggle(0, 46);
+		sched.toggle(0, 47);
+		SerialInterface serialIface = new SerialInterface();
+		MockSerialStateListener listener = new MockSerialStateListener();
+		serialIface.setListener(listener);
+		ScheduleDAO dao = new ScheduleDAO();
+		byte[] data = dao.serializeForTransfer(sched);
+		try {
+			serialIface.transferData(
+				CommPortIdentifier.getPortIdentifier("COM7"), data);
+
+		}
+		catch(NoSuchPortException nspe) { fail("Port doesn't exist"); }
 	}
 }

@@ -22,6 +22,11 @@ public class MockSerialStateListener implements SerialStateListener {
 		case OPENING_PORT  : System.err.println("Opening port " + info); break;
 		case PROBING_PORT  : System.err.println("Probing port " + info); break;
 		case HOTWATER_FOUND: System.err.println("HotWater found at " + info); break;
+		case CONNECTING    : System.err.println("Connecting... "); break;
+		case SENDING_DATA  : System.err.println("Connected, sending data..."); break;
+		case DATA_SENT     : System.err.println("Data sent!"); break;
+		case TRANSFER_ERROR: System.err.println("Data NOT sent! " + info); break;
+		
 		}
 	}
 }

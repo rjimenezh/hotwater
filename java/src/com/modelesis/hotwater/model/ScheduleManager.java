@@ -4,7 +4,6 @@
 package com.modelesis.hotwater.model;
 
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.List;
 import java.util.prefs.Preferences;
 
@@ -97,23 +96,6 @@ public class ScheduleManager {
 		return schedule.get(weekDay, segment);
 	}
 
-	/**
-	 * Returns the time representation
-	 * as an integer indicating the current
-	 * 10-minute segment within the week,
-	 * ranging from 0 (Sunday 0:00-0:09)
-	 * to 1,008 (Saturday 23:50-23:59)
-	 * 
-	 * @return Current time
-	 */
-	public int getTime() {
-		Calendar cal = Calendar.getInstance();
-		int dayOfWeek = cal.get(Calendar.DAY_OF_WEEK);
-		int hourOfDay = cal.get(Calendar.HOUR_OF_DAY);
-		int minutes = cal.get(Calendar.MINUTE);		
-		return 144 * (dayOfWeek - 1) + 6 * hourOfDay + minutes / 10;
-	}
-	
 	/**
 	 * Delegate method for {@link Schedule#normalizeWeek(int)}
 	 * 

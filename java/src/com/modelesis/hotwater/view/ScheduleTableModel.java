@@ -36,7 +36,7 @@ implements ScheduleChangeListener {
 	public ScheduleTableModel(ViewScheduleController ctrl) {
 		controller = ctrl;
 		controller.addScheduleChangeListener(this);
-		hourFormat = new SimpleDateFormat("h:00aa");
+		hourFormat = new SimpleDateFormat("h:00 aa");
 	}
 
 	/**

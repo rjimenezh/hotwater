@@ -57,6 +57,12 @@ int manualOverrideSegments = 0;
 int schedule[HOURS_PER_WEEK];
 
 // Time control vars
+// THIS IS NOT A CLOCK
+// The following variable names actually mean:
+// seconds within minute (0-59)
+// minutes within segment (0-9)
+// segment within hour (0-5)
+// hour within week (0-167)
 int seconds = 0;
 int minutes = 0;
 int segment = 0;
@@ -65,6 +71,9 @@ int hour = 0;
 // PC transfer constants
 const byte probeCmd[] = { 72, 87, 80 };  // 'HWP' - HotWater Probe
 const byte probeResp[] = { 72, 87, 80, 1 };
+const byte transferCmd[] = { 72, 87, 84 }; // 'HWT' - HotWater Transfer
+const byte transferResp[] = { 72, 87, 84 , 1};
+#define TRANSFER_BYTES  HOURS_PER_WEEK + 5
 
 /**
  * Firmware initialization.
@@ -82,19 +91,20 @@ void setup() {
   pinMode(acPower, INPUT);
   //
   Serial.begin(57600);
-//#ifdef DEBUG
   for(int z = 0; z < HOURS_PER_WEEK; z++)
     schedule[z] = 0;
+#ifdef DEBUG
   schedule[1] = B00111111;  // Sunday, 1:00 AM thru 2:00 AM
   schedule[3] = B00110000;  // Sunday, 3:40 AM thru 4:00 AM
-//#endif
+#endif
 }
+
 
 /**
  * Main loop.
  */
 void loop() {
-  if(Serial.available() >= 3) {
+  if(Serial.available()) {
     handleTransfer();
   }
   else {
@@ -117,21 +127,44 @@ void loop() {
  */
 void handleTransfer() {
     boolean isProbing = true;
+    boolean isTransfer = true;
+    
+    if(Serial.available() < 3)
+      return;
+    
     for(int i = 0; i < 3; i++) {
       int read = Serial.read();
-      if(read != probeCmd[i]) {
+      if((isProbing) && (read != probeCmd[i]))
         isProbing = false;
-        break;
-      }
+      if((isTransfer) && (read != transferCmd[i]))
+        isTransfer = false;
     }
     //
     if(isProbing)
       Serial.write(probeResp, 4);
+    if(isTransfer) {
+      Serial.write(transferResp, 4);
+      int bytesRead = 0;
+      byte transferData[TRANSFER_BYTES];
+      while(bytesRead < TRANSFER_BYTES) {
+        while(Serial.available() == 0)
+          ;
+        transferData[bytesRead++] = Serial.read();
+      }
+      Serial.write(transferResp, 4);
+      Serial.write(TRANSFER_BYTES);
+      //
+      seconds = transferData[0];
+      minutes = transferData[1];
+      segment = transferData[2];
+      hour = transferData[3] + transferData[4];      
+      for(int i = 5; i < TRANSFER_BYTES; i++)
+        schedule[i - 5] = transferData[i];
+    }
 }
 
 /**
  * Time counting function.
- * Also does some power management.
  */
 void waitASecond() {
   if(lastRunFailed) {
@@ -141,7 +174,14 @@ void waitASecond() {
     delay(700);
   }
   else
-    delay(1000);
+    sleepOneSecond();
+}
+
+/**
+ * Sleep function.
+ */
+void sleepOneSecond() {
+  delay(1000);
 }
 
 /**
@@ -344,7 +384,7 @@ int getRunSegments(int startSegment) {
   return runSegments;
 }
 
-#ifdef DEBUG
+//#ifdef DEBUG
 void printTime(int hour, int segment) {
   int weekDay = hour / 24;
   switch(weekDay) {
@@ -368,4 +408,4 @@ void printTime(int hour, int segment) {
   else
     Serial.println(10 * (segment));
 }
-#endif
+//#endif

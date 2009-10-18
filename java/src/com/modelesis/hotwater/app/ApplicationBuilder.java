@@ -22,14 +22,17 @@ import com.modelesis.hotwater.control.NormalizationController;
 import com.modelesis.hotwater.control.SchedulePersistenceController;
 import com.modelesis.hotwater.control.ScrollScheduleController;
 import com.modelesis.hotwater.control.ToggleScheduleController;
+import com.modelesis.hotwater.control.TransferScheduleController;
 import com.modelesis.hotwater.control.UndoController;
 import com.modelesis.hotwater.control.ViewScheduleController;
 import com.modelesis.hotwater.model.ScheduleChangeListener;
 import com.modelesis.hotwater.model.ScheduleManager;
+import com.modelesis.hotwater.model.seriface.SerialInterface;
 import com.modelesis.hotwater.view.MainWindow;
 import com.modelesis.hotwater.view.ScheduleTableCellRenderer;
 import com.modelesis.hotwater.view.ScheduleTableModel;
 import com.modelesis.hotwater.view.ScheduleTableSelectionListener;
+import com.modelesis.hotwater.view.TransferDialog;
 
 /**
  * The ApplicationBuilder class builds and 'wires'
@@ -44,6 +47,9 @@ public class ApplicationBuilder {
 	
 	/** Application UI main window. */
 	protected MainWindow mainWindow;
+	
+	/** Scheduling data transfer controller. */
+	protected TransferScheduleController transferController;
 	
 	/**
 	 * Builds the application by
@@ -60,7 +66,7 @@ public class ApplicationBuilder {
 		// The following line automatically loads the
 		// last saved schedule
 		SchedulePersistenceController persistenceController = 
-			new SchedulePersistenceController(scheduleManager);
+			new SchedulePersistenceController(scheduleManager);		
 		//
 		JTable scheduleTable = buildScheduleTable();
 		JPanel buttonPanel = buildButtonPanel(persistenceController, scheduleTable);
@@ -68,8 +74,21 @@ public class ApplicationBuilder {
 		WindowListener mainWindowListener =
 			buildMainWindowListener(persistenceController, mainWindow);
 		mainWindow.addWindowListener(mainWindowListener);
+		//
+		SerialInterface serialInterface = new SerialInterface();
+		transferController =
+			new TransferScheduleController(scheduleManager, serialInterface);
+		// The controller will, indirectly, reference the dialog
+		new TransferDialog(mainWindow, transferController);
 	}
 	
+	/**
+	 * Starts the application from a user perspective.
+	 */
+	public void startApp() {
+		mainWindow.setVisible(true);
+	}
+
 	/**
 	 * Builds the application UI's schedule table.
 	 * 
@@ -120,6 +139,8 @@ public class ApplicationBuilder {
 		buttonPanel.add(buildUndoButton(undoController));
 		//
 		buttonPanel.add(buildSaveButton(persistenceController));
+		//
+		buttonPanel.add(buildTransferButton());
 		//
 		return buttonPanel;
 	}
@@ -264,6 +285,23 @@ public class ApplicationBuilder {
 		});
 		return btnSave;
 	}
+	
+	
+	/**
+	 * Builds the application UI's "Transfer" button.
+	 * 
+	 * @return Instantiated transfer button
+	 */
+	private Component buildTransferButton() {
+		JButton btnTransfer = new JButton("Programar");
+		btnTransfer.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent evt) {
+				transferController.showTransferDialog();
+			}
+		});
+		return btnTransfer;
+	}
+	
 	/**
 	 * Builds the main window listener,
 	 * which prevents the main window
@@ -296,12 +334,5 @@ public class ApplicationBuilder {
 					System.exit(0);
 			}
 		};
-	}
-
-	/**
-	 * Starts the application from a user perspective.
-	 */
-	public void startApp() {
-		mainWindow.setVisible(true);
 	}
 }

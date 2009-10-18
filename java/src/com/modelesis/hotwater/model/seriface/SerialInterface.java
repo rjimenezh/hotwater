@@ -5,6 +5,7 @@ package com.modelesis.hotwater.model.seriface;
 
 import gnu.io.CommPort;
 import gnu.io.CommPortIdentifier;
+import gnu.io.NoSuchPortException;
 import gnu.io.PortInUseException;
 import gnu.io.SerialPort;
 import gnu.io.UnsupportedCommOperationException;
@@ -12,7 +13,9 @@ import gnu.io.UnsupportedCommOperationException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.List;
 
 /**
  * Implements the interface
@@ -65,6 +68,27 @@ public class SerialInterface {
 	}
 	
 	/**
+	 * Lists the names of serial ports
+	 * installed in this computer.
+	 * 
+	 * @return List of available serial port names.
+	 */
+	@SuppressWarnings("unchecked")
+	public String[] listSerialPorts() {
+		List<String> lstSerialPorts =
+			new ArrayList<String>();
+		Enumeration ports = CommPortIdentifier.getPortIdentifiers();
+		while(ports.hasMoreElements()) {
+			CommPortIdentifier portId = (CommPortIdentifier)ports.nextElement();
+			if(portId.getPortType() == CommPortIdentifier.PORT_SERIAL)
+				lstSerialPorts.add(portId.getName());
+		}
+		String[] serialPorts = new String[lstSerialPorts.size()];
+		lstSerialPorts.toArray(serialPorts);
+		return serialPorts;
+	}
+	
+	/**
 	 * Probes all serial ports of the PC,
 	 * looking for an attached HotWater device.
 	 * 
@@ -82,10 +106,12 @@ public class SerialInterface {
 			if(portId.isCurrentlyOwned())
 				continue;
 			hotWaterPort = probePort(portId);
-			if(hotWaterPort != null)
+			if(hotWaterPort != null) {
+				notifyState(SerialState.HOTWATER_FOUND, hotWaterPort.getName());
+			}
 				break;
 		}
-		
+
 		return hotWaterPort;
 	}
 	
@@ -93,16 +119,17 @@ public class SerialInterface {
 	 * Transfers the specified data to
 	 * the HotWater device on the specified port.
 	 * 
-	 * @param portId Port where the HotWater device listens
+	 * @param portName Port where the HotWater device listens
 	 * @param data Data to send to the device
 	 */
-	public void transferData(CommPortIdentifier portId, byte[] data) {
+	public void transferData(String portName, byte[] data) {
 		CommPort port = null;
 		
 		try {
+			CommPortIdentifier portId =
+				CommPortIdentifier.getPortIdentifier(portName);
 			notifyState(SerialState.OPENING_PORT, portId.getName());
 			port = portId.open("HotWaterPCSoft", OPEN_WAIT_MS);
-			InputStream is = null;
 			if(port instanceof SerialPort) {
 				notifyState(SerialState.CONNECTING, portId.getName());
 				SerialPort serialPort = (SerialPort)port;
@@ -111,7 +138,7 @@ public class SerialInterface {
 					SerialPort.STOPBITS_1,
 					SerialPort.PARITY_NONE);
 				OutputStream os = port.getOutputStream();
-				is = port.getInputStream();
+				InputStream is = port.getInputStream();
 				writeHandshake(os, TRANSFER_HANDSHAKE);
 				if(readAcknowledge(is, TRANSFER_ACK)) {
 					notifyState(SerialState.SENDING_DATA, portId.getName());
@@ -131,9 +158,12 @@ public class SerialInterface {
 					else
 						notifyState(SerialState.TRANSFER_ERROR, "Final ack missing");
 				}
+				else
+					notifyState(SerialState.TRANSFER_ERROR, "Initial ack missing");
 			}
 		}
-		catch (PortInUseException ignored) { ignored.printStackTrace(); }
+		catch (NoSuchPortException ignored) { ignored.printStackTrace(); }
+		catch (PortInUseException ignored) { ignored.printStackTrace(); }		
 		catch (UnsupportedCommOperationException ignored) { ignored.printStackTrace(); }
 		catch (IOException ignored) { ignored.printStackTrace(); }
 		finally {
@@ -169,7 +199,6 @@ public class SerialInterface {
 				writeHandshake(os, HOTWATER_PROBE);
 				if(readAcknowledge(is, HOTWATER_FOUND)) {
 					hotWaterPort = portId;
-					notifyState(SerialState.HOTWATER_FOUND, portId.getName());
 				}
 			}
 		}

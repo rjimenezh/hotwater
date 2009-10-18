@@ -3,8 +3,6 @@
  */
 package com.modelesis.hotwater.model.seriface;
 
-import gnu.io.CommPortIdentifier;
-import gnu.io.NoSuchPortException;
 import junit.framework.TestCase;
 
 import com.modelesis.hotwater.model.Schedule;
@@ -42,11 +40,6 @@ public class SerialInterfaceTest extends TestCase {
 		serialIface.setListener(listener);
 		ScheduleDAO dao = new ScheduleDAO();
 		byte[] data = dao.serializeForTransfer(sched);
-		try {
-			serialIface.transferData(
-				CommPortIdentifier.getPortIdentifier("COM7"), data);
-
-		}
-		catch(NoSuchPortException nspe) { fail("Port doesn't exist"); }
+		serialIface.transferData("COM7", data);
 	}
 }

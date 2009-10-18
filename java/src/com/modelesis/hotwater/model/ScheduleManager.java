@@ -7,6 +7,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.prefs.Preferences;
 
+import com.modelesis.hotwater.model.seriface.SerialInterface;
+
 /**
  * The ScheduleManager class defines
  * the external (component) interface
@@ -17,6 +19,7 @@ import java.util.prefs.Preferences;
  */
 public class ScheduleManager {
 	
+	/** Preferences key for schedule. */
 	private static final String SCHEDULE_KEY = "HOTWATER_SCHEDULE";
 	
 	/** Underlying schedule. */
@@ -174,6 +177,21 @@ public class ScheduleManager {
 		if(lastMemento > 0) {
 			lastMemento--;
 			schedule.restoreStatus(mementos.remove(lastMemento));
-		}
+		}	
+	}
+	
+	/**
+	 * Transfer scheduling data to
+	 * a HotWater device, over the
+	 * specified serial interface and
+	 * using the specified port.
+	 * 
+	 * @param serialInterface Serial interface to transfer over
+	 * @param port Port where the HotWater device listens
+	 */
+	public void transferData(SerialInterface serialInterface, String port) {
+		ScheduleDAO dao = new ScheduleDAO();
+		byte[] data = dao.serializeForTransfer(schedule);
+		serialInterface.transferData(port, data);
 	}
 }

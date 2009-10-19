@@ -221,6 +221,11 @@ void updateTime() {
  */
 void updateStateOnSecondChange() {
   powerIsOn = (digitalRead(acPower) == HIGH);
+  if(!powerIsOn) {
+    state = OFF;
+    manualRunMinutes = 0;
+    manualOverrideSegments = 0;
+  }
 }
 
 /**
@@ -281,6 +286,7 @@ void moPressed() {
     if(lastRunFailed) {
       state = OFF;
       lastRunFailed = false;
+      updateControlPanel(); // even though next loop does it
     }
     
     return;

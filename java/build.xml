@@ -1,0 +1,30 @@
+<project name="HotWater" default="distrib">
+	 
+	<property file="build.properties" />
+	
+	<target name="distrib">
+		<mkdir dir="distrib" />
+		<delete dir="distrib" includes="*" />
+		<mkdir dir="distrib/hotwater-1.0" />
+		<mkdir dir="distrib/hotwater-1.0/temp" />
+		<copy todir="distrib/hotwater-1.0/temp">
+			<fileset dir="bin" includes="**/*" />
+		</copy>
+		<copy todir="distrib/hotwater-1.0" file="${rxtx.jar.dir}/${rxtx.jar.name}" />
+		<copy todir="distrib/hotwater-1.0"
+			file="${rxtx.windows.dll.dir}/${rxtx.windows.dll.name}" />
+		<jar jarfile="distrib/hotwater-1.0/HotWater.jar"
+			basedir="distrib/hotwater-1.0/temp">
+			<manifest>
+				<attribute name="Main-Class"
+					value="com.modelesis.hotwater.app.HotWater"/>
+				<attribute name="Class-Path"
+					value="${rxtx.jar.name}" />
+			</manifest>
+		</jar>
+		<delete dir="distrib/hotwater-1.0/temp" />
+		<zip zipfile="distrib/hotwater-1.0.zip" basedir="distrib" /> 
+		<delete dir="distrib/hotwater-1.0" />
+	</target>
+	
+</project>

@@ -108,7 +108,8 @@ implements SerialStateListener {
 	 * Cancels the current operation.
 	 */
 	public void cancel() {
-		worker.interrupt();
+		if(worker != null)
+			worker.interrupt();
 	}
 	
 	/**

@@ -69,10 +69,10 @@ implements ScheduleChangeListener {
 			case 0 : columnName = "Hora"; break;
 			case 1 : columnName = "Lunes"; break;
 			case 2 : columnName = "Martes"; break;
-			case 3 : columnName = "Miercoles"; break;
+			case 3 : columnName = "Miércoles"; break;
 			case 4 : columnName = "Jueves"; break;
 			case 5 : columnName = "Viernes"; break;
-			case 6 : columnName = "Sabado"; break;
+			case 6 : columnName = "Sábado"; break;
 			case 7 : columnName = "Domingo";
 		}
 		

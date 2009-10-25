@@ -3,10 +3,14 @@
  * (c) 2009 Ramón Jiménez
  */
  
+//----------------------------------------
 // Debug flag - comment out for production
+//----------------------------------------
 // #define  DEBUG  1
  
+//----------------------------------------
 // Pin definitions
+//----------------------------------------
 const int manualOverride  = 3;
 const int manualTimer1    = 4;
 const int manualTimer2    = 5;
@@ -15,60 +19,82 @@ const int automatic       = 7;
 const int heater          = 8;
 const int acPower         = 9;
 
+//----------------------------------------
 // State definitions
+//----------------------------------------
 #define  OFF     0
 #define  AUTO    1
 #define  MT1     2
 #define  MT2     3
 #define  MT3     4
 
+//----------------------------------------
 // Time unit definitions
+//----------------------------------------
 #define  HOURS_PER_WEEK     168
 #ifdef DEBUG
 #define  SECONDS_PER_MINUTE  1
 #define  MINUTES_PER_SEGMENT 1
 #else
-#define  SECONDS_PER_MINUTE  1  // 60
-#define  MINUTES_PER_SEGMENT 1  // 10
+#define  SECONDS_PER_MINUTE  60
+#define  MINUTES_PER_SEGMENT 10
 #endif
 #define  SEGMENTS_PER_HOUR  6
 
+//----------------------------------------
 // Haver we got AC power?
+//----------------------------------------
 boolean powerIsOn = false;
 
-// Did a scheduled run failed
+//----------------------------------------
+// Did a scheduled run fail
 // because of no AC power?
-boolean lastRunFailed = false;
+//----------------------------------------
+volatile boolean lastRunFailed = false;
 
+//----------------------------------------
 // Heater state
-int state = OFF;
+//----------------------------------------
+volatile int state = OFF;
 
+//----------------------------------------
 // Manual run minutes
-int manualRunMinutes = 0;
+//----------------------------------------
+volatile int manualRunMinutes = 0;
 
+//----------------------------------------
 // Manual override segments -
 // for how many segments should
 // automatic scheduled runs be
 // inhibited because of a manual
 // override run or cancellation?
-int manualOverrideSegments = 0;
+//----------------------------------------
+volatile int manualOverrideSegments = 0;
 
+//----------------------------------------
 // Schedule
+//----------------------------------------
 int schedule[HOURS_PER_WEEK];
 
-// Time control vars
-// THIS IS NOT A CLOCK
+//----------------------------------------
+// Time control vars.
+// 
+// THIS IS NOT A CLOCK!
 // The following variable names actually mean:
-// seconds within minute (0-59)
-// minutes within segment (0-9)
-// segment within hour (0-5)
-// hour within week (0-167)
+//
+// * Seconds within minute (0-59)
+// * Minutes within segment (0-9)
+// * Segment within hour (0-5)
+// * Hour within week (0-167)
+//----------------------------------------
 int seconds = 0;
 int minutes = 0;
 int segment = 0;
 int hour = 0;
 
+//----------------------------------------
 // PC transfer constants
+//----------------------------------------
 const byte probeCmd[] = { 72, 87, 80 };  // 'HWP' - HotWater Probe
 const byte probeResp[] = { 72, 87, 80, 1 };
 const byte transferCmd[] = { 72, 87, 84 }; // 'HWT' - HotWater Transfer
@@ -76,7 +102,9 @@ const byte transferResp[] = { 72, 87, 84 , 1};
 #define TRANSFER_BYTES  HOURS_PER_WEEK + 5
 
 /**
+ *----------------------------------------
  * Firmware initialization.
+ *----------------------------------------
  */
 void setup() {
   pinMode(manualOverride, INPUT);
@@ -101,7 +129,9 @@ void setup() {
 
 
 /**
+ *----------------------------------------
  * Main loop.
+ *----------------------------------------
  */
 void loop() {
   if(Serial.available()) {
@@ -115,6 +145,7 @@ void loop() {
 }
 
 /**
+ *----------------------------------------
  * Handle a PC data transfer.
  * The Java PC software may
  * in fact attempt two different
@@ -124,6 +155,7 @@ void loop() {
  * or a transfer proper, where several
  * values are transferred from the PC
  * to the device.
+ *----------------------------------------
  */
 void handleTransfer() {
     boolean isProbing = true;
@@ -152,7 +184,7 @@ void handleTransfer() {
         transferData[bytesRead++] = Serial.read();
       }
       Serial.write(transferResp, 4);
-      Serial.write(TRANSFER_BYTES);
+      Serial.write(bytesRead);
       //
       seconds = transferData[0];
       minutes = transferData[1];
@@ -164,28 +196,25 @@ void handleTransfer() {
 }
 
 /**
+ *----------------------------------------
  * Time counting function.
+ *----------------------------------------
  */
 void waitASecond() {
   if(lastRunFailed) {
     digitalWrite(automatic, HIGH);
-    delay(300);
+    delay(500);
     digitalWrite(automatic, LOW);
-    delay(700);
+    delay(500);
   }
   else
-    sleepOneSecond();
+    delay(1000);
 }
 
 /**
- * Sleep function.
- */
-void sleepOneSecond() {
-  delay(1000);
-}
-
-/**
+ *----------------------------------------
  * Updates time variables.
+ *----------------------------------------
  */
 void updateTime() {
   // Update time
@@ -205,19 +234,20 @@ void updateTime() {
         hour++;
         if(hour == HOURS_PER_WEEK)
           hour = 0; // The week has changed
-      } // Segment
+      } // Hour change
       
       updateStateOnSegmentChange();
-    } // Minute
+    } // Segment change
     
-    if(manualOverrideSegments == 0)
-      updateStateOnMinuteChange();
-  } // Second
+    updateStateOnMinuteChange();
+  } // Minute change
 }
   
 /**
+ *----------------------------------------
  * Performs any state changes as required
  * by the fact that a second has elapsed.
+ *----------------------------------------
  */
 void updateStateOnSecondChange() {
   powerIsOn = (digitalRead(acPower) == HIGH);
@@ -229,8 +259,10 @@ void updateStateOnSecondChange() {
 }
 
 /**
+ *----------------------------------------
  * Performs any state changes as required
  * by the fact that a minute has elapsed.
+ *----------------------------------------
  */
 void updateStateOnMinuteChange() {
   // Update state as required:
@@ -241,12 +273,13 @@ void updateStateOnMinuteChange() {
   if((state == OFF) || (state == AUTO)) {
     int currentSchedule = schedule[hour];
     if(currentSchedule & (1 << segment)) {
-      if(powerIsOn) {
+      if(!powerIsOn) {
+        lastRunFailed = true;
+      }
+      else if(manualOverrideSegments == 0) {
         lastRunFailed = false;
         state = AUTO;
       }
-      else
-        lastRunFailed = true;
     }
     else
       state = OFF;
@@ -259,12 +292,14 @@ void updateStateOnMinuteChange() {
 }
 
 /**
+ *----------------------------------------
  * Performs any state changes as required
  * by the fact that a minute has elapsed.
  * This is only used to enforce scheduled
  * runs override by manual runs - the
  * updateStateOnMinuteChange() method handles
  * segment transitions as well.
+ *----------------------------------------
  */
 void updateStateOnSegmentChange() {
   if(manualOverrideSegments > 0)
@@ -272,21 +307,23 @@ void updateStateOnSegmentChange() {
 }
 
 /**
+ *----------------------------------------
  * Manual override pressed
  * interrupt handler.
+ *----------------------------------------
  */
 void moPressed() {
 #ifdef DEBUG
   Serial.println("MO pressed");
 #endif
     
-  // Dont' act on no power, except if
+  // Don't act on no power, except if
   // last run failed
   if(!powerIsOn) {
     if(lastRunFailed) {
       state = OFF;
       lastRunFailed = false;
-      updateControlPanel(); // even though next loop does it
+      updateControlPanel();
     }
     
     return;
@@ -308,11 +345,13 @@ void moPressed() {
 }
 
 /**
+ *----------------------------------------
  * Starts a manual run for the
  * specified number of minutes,
  * and ensures that scheduled runs
  * through the affected segments
  * are cancelled.
+ *----------------------------------------
  */
 void startManualRun(int nMinutes) {
   manualRunMinutes = nMinutes;
@@ -326,6 +365,7 @@ void startManualRun(int nMinutes) {
     affectedSegments++;
   for(int i = 0; i < affectedSegments; i++) {
     int runSegments = getRunSegments(segment + i);
+    // TODO: runSegments > 1? affectedSegments = runSegments?
     if(runSegments > 0) {
       affectedSegments += runSegments;
       break;
@@ -335,9 +375,11 @@ void startManualRun(int nMinutes) {
 }
 
 /**
+ *----------------------------------------
  * Updates the control panel display.
  * Valid for all states except when
  * last scheduled run has failed.
+ *----------------------------------------
  */
 void updateControlPanel() {
   if(lastRunFailed) {
@@ -361,11 +403,13 @@ void updateControlPanel() {
 }
 
 /**
+ *----------------------------------------
  * Determine the amount of consecutive
  * segments for which the heater will
  * remain on beginning with the specified segment.
  * In other words, determine the length
  * of the current "run", measured in segments.
+ *----------------------------------------
  */
 int getRunSegments(int startSegment) {
   int runSegments = 0;
@@ -390,7 +434,14 @@ int getRunSegments(int startSegment) {
   return runSegments;
 }
 
-//#ifdef DEBUG
+#ifdef DEBUG
+/**
+ *----------------------------------------
+ * Convenience method to display current
+ * week day, hour and segment, for
+ * debugging purposes.
+ *----------------------------------------
+ */
 void printTime(int hour, int segment) {
   int weekDay = hour / 24;
   switch(weekDay) {
@@ -414,4 +465,4 @@ void printTime(int hour, int segment) {
   else
     Serial.println(10 * (segment));
 }
-//#endif
+#endif

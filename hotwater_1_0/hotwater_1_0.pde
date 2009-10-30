@@ -101,6 +101,14 @@ const byte transferCmd[] = { 72, 87, 84 }; // 'HWT' - HotWater Transfer
 const byte transferResp[] = { 72, 87, 84 , 1};
 #define TRANSFER_BYTES  HOURS_PER_WEEK + 5
 
+
+//----------------------------------------
+// Button debouncing
+//----------------------------------------
+#define DEBOUNCE_TIME 250 // milliseconds between consecutive presses
+
+long lastPressed = 0;
+
 /**
  *----------------------------------------
  * Firmware initialization.

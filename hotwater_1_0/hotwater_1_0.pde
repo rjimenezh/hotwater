@@ -101,13 +101,18 @@ const byte transferCmd[] = { 72, 87, 84 }; // 'HWT' - HotWater Transfer
 const byte transferResp[] = { 72, 87, 84 , 1};
 #define TRANSFER_BYTES  HOURS_PER_WEEK + 5
 
-
 //----------------------------------------
 // Button debouncing
 //----------------------------------------
 #define DEBOUNCE_TIME 250 // milliseconds between consecutive presses
 
 long lastPressed = 0;
+
+//----------------------------------------
+// Software-based time callibration control.
+//----------------------------------------
+
+int runHours = 0;
 
 /**
  *----------------------------------------
@@ -201,6 +206,9 @@ void handleTransfer() {
       for(int i = 5; i < TRANSFER_BYTES; i++)
         schedule[i - 5] = transferData[i];
     }
+    
+    // Reset run hour counter
+    runHours = 0;
 }
 
 /**
@@ -240,6 +248,7 @@ void updateTime() {
       if(segment % SEGMENTS_PER_HOUR == 0) {
         segment = 0;
         hour++;
+        callibrateTime();
         if(hour == HOURS_PER_WEEK)
           hour = 0; // The week has changed
       } // Hour change
@@ -251,6 +260,35 @@ void updateTime() {
   } // Minute change
 }
   
+/**
+ *----------------------------------------
+ * Performs a software callibration
+ * based on extended-run observations,
+ * as the Arduino Pro Mini is clocked
+ * by a resonator and thus rather imprecise.
+ * This particular callibration routine
+ * compensates for a 6m 9s drift every
+ * 24-hour period (the Arduino runs late).
+ * Increments are done at 4-hour intervals
+ * to prevent any particular programmed run
+ * from being off by more than one minute.
+ *---------------------------------------- 
+ */
+void callibrateTime() {
+  runHours++;
+  
+  // Adds one minute, one second six times a day
+  if(runHours % 4 == 0) {
+    minutes++;
+    seconds += 1;
+  }
+
+  // Adds one additional second three times a day
+  if(runHours % 8 == 0)
+    seconds++;
+}
+
+
 /**
  *----------------------------------------
  * Performs any state changes as required
@@ -321,6 +359,20 @@ void updateStateOnSegmentChange() {
  *----------------------------------------
  */
 void moPressed() {
+  
+  long t = millis();
+  
+  // A HotWater device may
+  // actually run to overflow
+  // Arduino's millis counter
+  if(t < lastPressed)
+    lastPressed = 0;
+    
+  if((t - lastPressed) < DEBOUNCE_TIME)
+    return;
+    
+  lastPressed = t;
+  
 #ifdef DEBUG
   Serial.println("MO pressed");
 #endif
@@ -371,14 +423,11 @@ void startManualRun(int nMinutes) {
   int affectedSegments = manualRunMinutes / MINUTES_PER_SEGMENT;
   if(minutes > 0)
     affectedSegments++;
-  for(int i = 0; i < affectedSegments; i++) {
-    int runSegments = getRunSegments(segment + i);
-    // TODO: runSegments > 1? affectedSegments = runSegments?
-    if(runSegments > 0) {
-      affectedSegments += runSegments;
-      break;
-    }
-  }
+  int lastAffectedSegment = segment + affectedSegments - 1;
+  int nextRunSegments = getRunSegments(lastAffectedSegment);
+  if(nextRunSegments > 1)
+    affectedSegments += nextRunSegments - 1;
+  
   manualOverrideSegments = affectedSegments;
 }
 

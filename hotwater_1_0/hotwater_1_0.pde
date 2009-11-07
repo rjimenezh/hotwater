@@ -40,6 +40,7 @@ const int acPower         = 9;
 #define  MINUTES_PER_SEGMENT 10
 #endif
 #define  SEGMENTS_PER_HOUR  6
+#define  ONE_SECOND  1000
 
 //----------------------------------------
 // Haver we got AC power?
@@ -51,6 +52,17 @@ boolean powerIsOn = false;
 // because of no AC power?
 //----------------------------------------
 volatile boolean lastRunFailed = false;
+
+//----------------------------------------
+// Failure blink time duty cycle.
+// For each second that an automated run
+// has failed, how much of it should the
+// Auto LED blink?  The remainder of the
+// second (the time the LED is off) is
+// computed automatically.
+//----------------------------------------
+#define  FAILURE_BLINK_TIME  200
+#define  FAILURE_OFF_TIME  1000 - FAILURE_BLINK_TIME
 
 //----------------------------------------
 // Heater state
@@ -219,12 +231,12 @@ void handleTransfer() {
 void waitASecond() {
   if(lastRunFailed) {
     digitalWrite(automatic, HIGH);
-    delay(500);
+    delay(FAILURE_BLINK_TIME);
     digitalWrite(automatic, LOW);
-    delay(500);
+    delay(FAILURE_OFF_TIME);
   }
   else
-    delay(1000);
+    delay(ONE_SECOND);
 }
 
 /**

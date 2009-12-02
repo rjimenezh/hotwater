@@ -12,7 +12,7 @@
 // Pin definitions
 //----------------------------------------
 const int manualOverride  = 3;
-const int manualTimer1    = 4;
+const int manualTimer1    = 10;
 const int manualTimer2    = 5;
 const int manualTimer3    = 6;
 const int automatic       = 7;

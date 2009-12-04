@@ -133,7 +133,7 @@ int runHours = 0;
  */
 void setup() {
   pinMode(manualOverride, INPUT);
-  digitalWrite(manualOverride, HIGH); // Turn on internal pull-up
+  // digitalWrite(manualOverride, HIGH); // Turn on internal pull-up
   attachInterrupt(1, moPressed, FALLING);
   //
   pinMode(manualTimer1, OUTPUT);

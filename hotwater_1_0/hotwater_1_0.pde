@@ -40,10 +40,10 @@ const int acPower         = 9;
 #define  MINUTES_PER_SEGMENT 10
 #endif
 #define  SEGMENTS_PER_HOUR  6
-#define  ONE_SECOND  1000
+#define  ONE_SECOND  880
 
 //----------------------------------------
-// Haver we got AC power?
+// Have we got AC power?
 //----------------------------------------
 boolean powerIsOn = false;
 
@@ -121,10 +121,23 @@ const byte transferResp[] = { 72, 87, 84 , 1};
 long lastPressed = 0;
 
 //----------------------------------------
+// Minimum amount of 'cycles' during which
+// the MO button must be pressed in order
+// to consider a valid click.  'Cycles'
+// merely refers to a for loop - see the
+// moPressed() method for details.
+//----------------------------------------
+#define  NOISE_CLICK  20000
+
+//----------------------------------------
 // Software-based time callibration control.
 //----------------------------------------
-
 int runHours = 0;
+
+//----------------------------------------
+// Schedule set control var.
+//----------------------------------------
+boolean scheduleSet = 0;
 
 /**
  *----------------------------------------
@@ -150,6 +163,8 @@ void setup() {
   schedule[1] = B00111111;  // Sunday, 1:00 AM thru 2:00 AM
   schedule[3] = B00110000;  // Sunday, 3:40 AM thru 4:00 AM
 #endif
+  //
+  pinMode(13, OUTPUT);
 }
 
 
@@ -215,8 +230,11 @@ void handleTransfer() {
       minutes = transferData[1];
       segment = transferData[2];
       hour = transferData[3] + transferData[4];      
-      for(int i = 5; i < TRANSFER_BYTES; i++)
+      for(int i = 5; i < TRANSFER_BYTES; i++) {
         schedule[i - 5] = transferData[i];
+        if(transferData[i] && !scheduleSet)
+          scheduleSet = true;
+      }
     }
     
     // Reset run hour counter
@@ -235,8 +253,24 @@ void waitASecond() {
     digitalWrite(automatic, LOW);
     delay(FAILURE_OFF_TIME);
   }
-  else
-    delay(ONE_SECOND);
+  else {
+    delay(ONE_SECOND);  // Actually 880 ms
+    if(seconds % 5 == 0) {
+      digitalWrite(13, HIGH);
+      delay(10);      // ...890 ms...
+      digitalWrite(13, LOW);
+      if(scheduleSet) {
+        delay(100);  // ... 990 ms...
+        digitalWrite(13, HIGH);
+        delay(10);  // One second
+        digitalWrite(13, LOW);
+      }
+      else
+        delay(110);  // One second
+    }
+    else
+      delay(120);  // Complete one second
+  }
 }
 
 /**
@@ -372,11 +406,33 @@ void updateStateOnSegmentChange() {
  */
 void moPressed() {
   
-  long t = millis();
-  
+  // Discard spurious (EMI, false contact
+  // or mechanical failure) button 'presses'
+  unsigned int count = 0;
+  while((PIND & B00001000) == 0)
+    count++;
+    
+#ifdef DEBUG
+  Serial.println("******");
+  Serial.print(count);
+#endif
+    
+  if(count < NOISE_CLICK) {
+#ifdef DEBUG
+    Serial.println(" (not enough)");
+#endif
+    return;
+  }
+    
+#ifdef DEBUG
+  Serial.print(" (OK)");
+#endif
+
   // A HotWater device may
   // actually run to overflow
   // Arduino's millis counter
+  long t = millis();
+  
   if(t < lastPressed)
     lastPressed = 0;
     

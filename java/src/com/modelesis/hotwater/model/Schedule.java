@@ -37,7 +37,7 @@ public class Schedule {
 	/** Maximum segment array index. */
 	public static final int MAX_SEGMENT = 143;
 	
-	/** Actual schedule - One bolean per weekday/segment coordinate. */
+	/** Actual schedule - One boolean per weekday/segment coordinate. */
 	protected boolean[][] schedule;
 	
 	/** Schedule change listeners. */

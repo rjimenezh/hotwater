@@ -6,6 +6,8 @@
 //----------------------------------------
 // Debug flag - comment out for production
 //----------------------------------------
+
+
 // #define  DEBUG  1
  
 //----------------------------------------
@@ -52,6 +54,7 @@ boolean powerIsOn = false;
 // because of no AC power?
 //----------------------------------------
 volatile boolean lastRunFailed = false;
+volatile boolean notifyRunFailed = false;
 
 //----------------------------------------
 // Failure blink time duty cycle.
@@ -146,7 +149,7 @@ boolean scheduleSet = 0;
  */
 void setup() {
   pinMode(manualOverride, INPUT);
-  // digitalWrite(manualOverride, HIGH); // Turn on internal pull-up
+  digitalWrite(manualOverride, HIGH); // Turn on internal pull-up
   attachInterrupt(1, moPressed, FALLING);
   //
   pinMode(manualTimer1, OUTPUT);
@@ -247,7 +250,7 @@ void handleTransfer() {
  *----------------------------------------
  */
 void waitASecond() {
-  if(lastRunFailed) {
+  if(notifyRunFailed) {
     digitalWrite(automatic, HIGH);
     delay(FAILURE_BLINK_TIME);
     digitalWrite(automatic, LOW);
@@ -366,6 +369,8 @@ void updateStateOnMinuteChange() {
     int currentSchedule = schedule[hour];
     if(currentSchedule & (1 << segment)) {
       if(!powerIsOn) {
+        if(!lastRunFailed)
+          notifyRunFailed = true;
         lastRunFailed = true;
       }
       else if(manualOverrideSegments == 0) {
@@ -448,9 +453,9 @@ void moPressed() {
   // Don't act on no power, except if
   // last run failed
   if(!powerIsOn) {
-    if(lastRunFailed) {
+    if(notifyRunFailed) {
       state = OFF;
-      lastRunFailed = false;
+      notifyRunFailed = false;
       updateControlPanel();
     }
     
